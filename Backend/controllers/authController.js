@@ -31,6 +31,7 @@ const login = async (req, res) => {
         if (!validPassword) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
+        console.log("LOGIN SECRET =", process.env.JWT_SECRET);
         const token = jwt.sign({ userId: user.rows[0].id, role: user.rows[0].role }, process.env.JWT_SECRET, { expiresIn: "7d" });
         res.status(200).json({token, 
             user: { 

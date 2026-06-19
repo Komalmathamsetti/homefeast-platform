@@ -3,11 +3,13 @@ const cors = require("cors");
 const pool = require("./db");
 const app = express();
 const authRoutes = require("./routes/authRoutes");
+const dashBoardRoutes = require("./routes/dashBoardRoutes");
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/dashboard", dashBoardRoutes);
 app.get("/", async (req, res) => {
   res.send("Homefeast API is running");
 });
