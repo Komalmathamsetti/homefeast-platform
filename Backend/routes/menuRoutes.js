@@ -1,0 +1,11 @@
+const express = require('express');
+const router = express.Router();
+const verifyToken = require("../middleware/authMiddleware");
+const authorizeRole = require("../middleware/roleMiddleware");
+const { addMenu, getAllMenus, getMenuById, updateMenu, deleteMenu } = require("../controllers/menuController");
+router.post("/",verifyToken,authorizeRole("cook"),addMenu);
+router.get("/",getAllMenus);
+router.get("/:id",getMenuById);
+router.put("/:id",verifyToken,authorizeRole("cook"),updateMenu);
+router.delete("/:id",verifyToken,authorizeRole("cook"),deleteMenu);
+module.exports = router;
