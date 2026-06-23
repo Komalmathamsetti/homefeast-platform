@@ -7,6 +7,7 @@ const dashBoardRoutes = require("./routes/dashBoardRoutes");
 const cookRoutes = require("./routes/cookRoutes");
 const menuRoutes = require("./routes/menuRoutes");
 const searchRoutes = require("./routes/searchRoutes");
+const subscriptions = require("./routes/subscriptionRoutes");
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -15,6 +16,7 @@ app.use("/api/dashboard", dashBoardRoutes);
 app.use("/api/cooks",cookRoutes);
 app.use("/api/menus",menuRoutes);
 app.use("/api/search",searchRoutes);
+app.use("/api/subscriptions",subscriptions);
 app.get("/", async (req, res) => {
   res.send("Homefeast API is running");
 });
