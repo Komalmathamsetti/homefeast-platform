@@ -6,6 +6,7 @@ import CustomerDashboard from "./pages/CustomerDashboard";
 import CookDashboard from "./pages/CookDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoutes";
+import BrowseCooks from "./pages/BrowseCooks";
 function App(){
   return(
     <Routes>
@@ -41,7 +42,10 @@ function App(){
           </ProtectedRoute>
         }
       />
-
+      <Route 
+        path="/browse-cooks"
+        element={<BrowseCooks/>}
+      />
     </Routes>
   )
 };
