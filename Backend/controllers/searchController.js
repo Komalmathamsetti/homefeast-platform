@@ -84,10 +84,42 @@ const getCookDetails = async(req,res)=>{
         res.status(500).json({message: "Server Error"});
     }
 };
+const searchCooks = async (req, res) => {
+  try {
+    const { search } = req.query;
+
+    const result = await pool.query(
+      `
+      SELECT
+        c.id,
+        u.name,
+        c.bio,
+        c.service_area,
+        c.delivery_timings,
+        c.rating
+      FROM cooks c
+      JOIN users u
+        ON c.user_id = u.id
+      WHERE
+        LOWER(u.name) LIKE LOWER($1)
+        OR LOWER(c.bio) LIKE LOWER($1)
+        OR LOWER(c.service_area) LIKE LOWER($1)
+      `,
+      [`%${search}%`]
+    );
+
+    res.status(200).json(result.rows);
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
 module.exports={
     getAllCooks,
     searchByCuisine,
     filterByMealType,
     filterByPrice,
-    getCookDetails
+    getCookDetails,
+    searchCooks
 };

@@ -24,7 +24,7 @@ function CookCard({ cook }) {
       <div className="relative h-56 w-full overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80"
-          alt={name}
+          alt={cook.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-transparent" />
@@ -40,12 +40,12 @@ function CookCard({ cook }) {
             <p className="text-sm text-slate-500">{cook.service_area}</p>
           </div>
           <div className="rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-600">
-            Starting soon
+            Serving Homemade Meals
           </div>
         </div>
 
         <p className="mb-3 text-sm font-medium text-slate-600">{cook.bio}</p>
-
+        <p className="text-sm text-gray-500 mb-4">🕒 {cook.delivery_timings}</p>
         <div className="mb-5">
           <StarRating rating={Number(cook.rating)} />
         </div>
@@ -65,17 +65,15 @@ export default function BrowseHomeCooksPage() {
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState("");
   const fetchCooks = async () => {
-    try {
-        const response = await API.get("/search/cooks");
-        setCooks(response.data);
-    }
-    catch (err) {
-        console.log(err);
-        setError("Unable to load cooks");
-    }
-    finally {
-        setLoading(false);
-    }
+  try {
+    const response = await API.get("/search/cooks");
+    setCooks(response.data);
+  } catch (err) {
+    console.error(err);
+    setError("Unable to load cooks");
+  } finally {
+    setLoading(false);
+  }
   };
   useEffect(() => {
     const loadCooks = async () => {
@@ -83,20 +81,45 @@ export default function BrowseHomeCooksPage() {
     };
     loadCooks();
    }, []);
+   const searchCooks = async (keyword) => {
+    try {
+        const response = await API.get(
+          `/search?search=${keyword}`
+        );
+        setCooks(response.data);
+    }
+    catch (err) {
+      console.log(err);
+    }
+  };
   const filteredCooks = useMemo(() => {
-    return cooks.filter((cook) => {
-      const matchesSearch =
-        cook.name.toLowerCase().includes(search.toLowerCase()) ||
-        cook.cuisine.toLowerCase().includes(search.toLowerCase()) ||
-        cook.location.toLowerCase().includes(search.toLowerCase());
+  return cooks.filter((cook) => {
+    const matchesSearch =
+      cook.name.toLowerCase().includes(search.toLowerCase()) ||
+      cook.bio.toLowerCase().includes(search.toLowerCase()) ||
+      cook.service_area.toLowerCase().includes(search.toLowerCase());
 
-      const matchesCuisine =
-        cuisine === "All Cuisines" ? true : cook.cuisine === cuisine;
-
-      return matchesSearch && matchesCuisine;
-    });
-  }, [search, cuisine]);
-
+    return matchesSearch;
+  });
+  }, [cooks, search]);
+  if (loading) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <h1 className="text-3xl font-bold text-orange-500">
+        Loading Home Cooks...
+      </h1>
+    </div>
+  );
+  }
+  if (error) {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <h1 className="text-red-500 text-2xl">
+        {error}
+      </h1>
+    </div>
+  );
+  }
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-white to-white text-slate-900">
       {/* Navbar */}
@@ -112,21 +135,11 @@ export default function BrowseHomeCooksPage() {
           </div>
 
           <div className="hidden items-center gap-8 md:flex">
-            {["Home", "Browse Cooks", "About", "Contact"].map((item) => (
-              <a
-                key={item}
-                href="#"
-                className={`text-sm font-medium transition ${
-                  item === "Browse Cooks"
-                    ? "text-orange-600"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {item}
-              </a>
-            ))}
+            <Link to="/" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Home</Link>
+            <Link to="/browse-cooks" className="text-sm font-medium text-orange-600 transition">Browse Cooks</Link> 
+            <Link to="/about" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">About</Link>
+            <Link to="/contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Contact</Link>
           </div>
-
           <div className="flex items-center gap-3">
             <Link to="/login" className="text-orange-500 hover:text-orange-600 font-semibold">Login</Link>
             <Link to="/register" className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg">Register</Link>
@@ -155,7 +168,14 @@ export default function BrowseHomeCooksPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e)=>{const value = e.target.value;
+                  setSearch(value);
+                  if(value===""){
+                    fetchCooks();
+                  }else{
+                    searchCooks(value);
+                  }
+                }}
                 placeholder="Search by cook name, cuisine, or location"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
               />
@@ -186,11 +206,23 @@ export default function BrowseHomeCooksPage() {
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {filteredCooks.map((cook) => (
-              <CookCard key={cook.id} cook={cook} />
-            ))}
-          </div>
+          {
+            filteredCooks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+            <div className="text-7xl mb-5">🍱</div>
+            <h2 className="text-3xl font-bold text-gray-700">No Home Cooks Found</h2>
+            <p className="text-gray-500 mt-3">Try searching with another keyword.</p>
+            </div>
+            ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              {filteredCooks.map((cook) => (
+                <CookCard
+                  key={cook.id}
+                  cook={cook}
+                />
+                ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
