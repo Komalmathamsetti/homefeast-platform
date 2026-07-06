@@ -2,16 +2,27 @@ const pool = require("../db");
 const getAllCooks = async(req,res)=>{
     try{
         const cooks = await pool.query(
-            `SELECT cooks.id,
-             cooks.bio,
-             cooks.service_area,
-             cooks.delivery_timings,
-             cooks.rating,
-             users.name
-             FROM cooks
-             JOIN users
-             ON cooks.user_id = users.id
-             WHERE cooks.approved = true`
+            `SELECT DISTINCT
+            c.id,
+            u.name,
+            c.bio,
+            c.service_area,
+            c.delivery_timings,
+            c.rating,
+            MIN(m.price) AS starting_price,
+            MIN(m.cuisine) AS cuisine
+            FROM cooks c
+            JOIN users u
+            ON c.user_id=u.id
+            LEFT JOIN menus m
+            ON c.id=m.cook_id
+            GROUP BY
+            c.id,
+            u.name,
+            c.bio,
+            c.service_area,
+            c.delivery_timings,
+            c.rating;`
         );
         res.status(200).json(cooks.rows);
     }catch(error){
@@ -115,11 +126,37 @@ const searchCooks = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+const filterCuisine = async(req,res)=>{
+   try{
+    const { cuisine } = req.query;
+    const result = await pool.query(
+        `SELECT DISTINCT
+        c.id,
+        u.name,
+        c.bio,
+        c.service_area,
+        c.delivery_timings,
+        c.rating,
+        m.cuisine
+        FROM cooks c
+        JOIN users u
+        ON c.user_id=u.id
+        LEFT JOIN menus m
+        ON c.id=m.cook_id
+        WHERE LOWER(m.cuisine)=LOWER($1)`,[cuisine]
+    );
+    res.json(result.rows);
+   }catch(error){
+    console.log(error);
+    res.status(500).json({message:"Server Error"});
+   }
+};
 module.exports={
     getAllCooks,
     searchByCuisine,
     filterByMealType,
     filterByPrice,
     getCookDetails,
-    searchCooks
+    searchCooks,
+    filterCuisine
 };

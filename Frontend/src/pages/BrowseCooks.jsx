@@ -1,8 +1,8 @@
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import API from "../services/api";
 import { Link } from "react-router-dom";
 
-function StarRating({ rating }) {
+/*function StarRating({ rating }) {
   const fullStars = Math.floor(rating);
   const hasHalf = rating % 1 >= 0.5;
 
@@ -16,7 +16,7 @@ function StarRating({ rating }) {
       <span className="ml-1 text-sm font-medium text-slate-600">{rating}</span>
     </div>
   );
-}
+}*/
 
 function CookCard({ cook }) {
   return (
@@ -40,15 +40,15 @@ function CookCard({ cook }) {
             <p className="text-sm text-slate-500">{cook.service_area}</p>
           </div>
           <div className="rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-600">
-            Serving Homemade Meals
+            ₹ {cook.starting_price}
           </div>
         </div>
-
-        <p className="mb-3 text-sm font-medium text-slate-600">{cook.bio}</p>
-        <p className="text-sm text-gray-500 mb-4">🕒 {cook.delivery_timings}</p>
-        <div className="mb-5">
-          <StarRating rating={Number(cook.rating)} />
+        <div className="space-y-2 mb-5">
+          <p className="text-gray-700">🍛 {cook.cuisine}</p>
+          <p className="text-gray-700">🕒 {cook.delivery_timings}</p>
+          <p className="text-gray-500">{cook.bio}</p>
         </div>
+        <div className="mb-5 text-yellow-500 font-semibold">⭐ {cook.rating}</div>
 
         <Link to={`/cook/${cook.id}`} className="block w-full rounded-2xl bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600">
           View Profile
@@ -92,16 +92,27 @@ export default function BrowseHomeCooksPage() {
       console.log(err);
     }
   };
-  const filteredCooks = useMemo(() => {
-  return cooks.filter((cook) => {
-    const matchesSearch =
-      cook.name.toLowerCase().includes(search.toLowerCase()) ||
-      cook.bio.toLowerCase().includes(search.toLowerCase()) ||
-      cook.service_area.toLowerCase().includes(search.toLowerCase());
-
-    return matchesSearch;
-  });
-  }, [cooks, search]);
+  const filterCuisine = async(value)=>{
+    try{
+      const response = await API.get(
+        `/search/filter?cuisine=${value}`
+      );
+      setCooks(response.data);
+    }catch(error){
+      console.log(error);
+    }
+  };
+  const filteredCooks = cooks;
+  useEffect(()=>{
+    const timer=setTimeout(()=>{
+      if(search.trim()===""){
+        fetchCooks();
+      }else{
+        searchCooks(search);
+      }
+    },500);
+    return()=>clearTimeout(timer);
+  },[search]);
   if (loading) {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -168,13 +179,9 @@ export default function BrowseHomeCooksPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e)=>{const value = e.target.value;
+                onChange={(e)=>{
+                  const value = e.target.value;
                   setSearch(value);
-                  if(value===""){
-                    fetchCooks();
-                  }else{
-                    searchCooks(value);
-                  }
                 }}
                 placeholder="Search by cook name, cuisine, or location"
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
@@ -184,7 +191,14 @@ export default function BrowseHomeCooksPage() {
             <div>
               <select
                 value={cuisine}
-                onChange={(e) => setCuisine(e.target.value)}
+                onChange={(e) =>{ const value = e.target.value;
+                  setCuisine(value);
+                  if(value === "All Cuisines"){
+                    fetchCooks();
+                  }else{
+                    filterCuisine(value);
+                  }
+                }}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
               >
                 <option>All Cuisines</option>

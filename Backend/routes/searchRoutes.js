@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { getAllCooks, searchByCuisine, filterByMealType, filterByPrice, getCookDetails, searchCooks } = require("../controllers/searchController");
+const { getAllCooks, searchByCuisine, filterByMealType, filterByPrice, getCookDetails, searchCooks, filterCuisine } = require("../controllers/searchController");
 router.get("/cooks",getAllCooks);
 router.get("/",searchCooks);
 router.get("/search",searchByCuisine);
 router.get("/mealtype",filterByMealType);
 router.get("/price",filterByPrice);
+router.get("/filter",filterCuisine);
 router.get("/cook/:id",getCookDetails);
 module.exports = router;

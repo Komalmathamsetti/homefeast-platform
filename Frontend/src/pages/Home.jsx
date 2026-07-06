@@ -129,7 +129,7 @@ export default function HomeFeast() {
           {/* Desktop links */}
           <ul className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <Link to="/" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Home</Link>
-            <Link to="/browse-cooks" className="text-sm font-medium text-orange-600 transition">Browse Cooks</Link> 
+            <Link to="/browse-cooks" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Browse Cooks</Link> 
             <Link to="/about" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">About</Link>
             <Link to="/contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Contact</Link>
           </ul>
