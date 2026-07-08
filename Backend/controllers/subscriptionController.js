@@ -12,7 +12,7 @@ const createSubscription = async(req,res)=>{
         [userId,cook_id]
        );
        if(existing.rows.length>0){
-        res.status(400).json({message: "Subscription already exists"});
+        return res.status(400).json({message: "Subscription already exists"});
        }
        const subscription = await pool.query(
         `INSERT INTO subscriptions
@@ -39,7 +39,7 @@ const getMySubscriptions = async(req,res)=>{
         ON cooks.user_id = users.id
         WHERE subscriptions.user_id = $1`,[userId]
       );
-      res.status(200).json(subscriptions.rows[0]);
+      res.status(200).json(subscriptions.rows);
    }catch(error){
     console.log(error);
     res.status(500).json({message: "Server Error"});
@@ -54,10 +54,10 @@ const cancelSubscription = async(req,res)=>{
             subscriptions WHERE id = $1`,[subscriptionId]
         );
         if(subscription.rows.length === 0){
-            res.status(404).json({message:"Subscription not found"});
+            return res.status(404).json({message:"Subscription not found"});
         }
         if(subscription.rows[0].user_id !== userId){
-            res.status(403).json({message:"Unauthorized"});
+            return res.status(403).json({message:"Unauthorized"});
         }
         const cancelled = await pool.query(
             `UPDATE subscriptions
@@ -80,7 +80,7 @@ const getCookSubscribers = async(req,res)=>{
         WHERE user_id = $1`,[userId]
     );
     if(cook.rows.length === 0){
-        res.status(404).json({message: "Cook not found"});
+       return res.status(404).json({message: "Cook not found"});
     }
     const subscribers = await pool.query(
     `SELECT

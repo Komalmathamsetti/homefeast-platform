@@ -3,20 +3,26 @@ const pool = require("../db");
 const placeOrder = async(req,res)=>{
     try{
         const userId = req.user.userId;
-        const { menu_id, quantity } = req.body;
+        const { menu_id, quantity, delivery_address, special_instructions } = req.body;
+        if (quantity <= 0) {
+           return res.status(400).json({message: "Quantity must be at least 1"});
+        }
         const menu = await pool.query(
             `SELECT * FROM menus WHERE id = $1`,[menu_id]
         );
         if(menu.rows.length === 0){
             return res.status(404).json({message: "Menu not found"});
         }
+        if (!menu.rows[0].availability) {
+            return res.status(400).json({message: "This meal is currently unavailable"});
+        }
         const totalPrice = menu.rows[0].price*quantity;
         const order = await pool.query(
             `INSERT INTO orders
-            (user_id,cook_id,menu_id,quantity,total_price)
-            VALUES ($1,$2,$3,$4,$5)
+            (user_id,cook_id,menu_id,quantity,total_price,delivery_address,special_instructions)
+            VALUES ($1,$2,$3,$4,$5,$6,$7)
             RETURNING *`,
-            [userId,menu.rows[0].cook_id,menu_id,quantity,totalPrice]
+            [userId,menu.rows[0].cook_id,menu_id,quantity,totalPrice,delivery_address,special_instructions]
         );
         res.status(201).json({message:"Order Placed",order:order.rows[0]});
     }catch(error){
@@ -28,8 +34,20 @@ const getMyOrders = async(req,res)=>{
     try{
        const userId = req.user.userId;
        const orders = await pool.query(
-        `SELECT * FROM orders
-        WHERE user_id = $1`,[userId]
+        `SELECT
+        orders.*,
+        menus.dish_name,
+        menus.price,
+        users.name AS cook_name
+        FROM orders
+        JOIN menus
+        ON orders.menu_id = menus.id
+        JOIN cooks
+        ON orders.cook_id = cooks.id
+        JOIN users
+        ON cooks.user_id = users.id
+        WHERE orders.user_id = $1
+        ORDER BY orders.created_at DESC`,[userId]
        );
        res.status(200).json(orders.rows);
     }catch(error){

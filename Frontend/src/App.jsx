@@ -7,6 +7,8 @@ import CookDashboard from "./pages/CookDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 import BrowseCooks from "./pages/BrowseCooks";
+import CookDetails from "./pages/CookDetails";
+import OrderPage from "./pages/OrderDetails"
 function App(){
   return(
     <Routes>
@@ -33,7 +35,11 @@ function App(){
           </ProtectedRoute>
         }
       />
-
+      <Route 
+        path="/cook/:id"
+        element={<CookDetails />}
+      />
+      <Route path="/order/:id" element={<OrderPage />} />
       <Route
         path="/admin"
         element={
