@@ -5,22 +5,6 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  /*useEffect(()=>{
-     const fetchOrders = async () => {
-    try {
-        const response = await API.get("/orders/my");
-        console.log(response.data);
-        setOrders(response.data);
-    }
-    catch (error) {
-        console.log(error);
-        setError("Unable to load orders");
-    }
-    finally {
-        setLoading(false);
-    }
-  };fetchOrders();
-  },[]);*/
   const fetchOrders = async () => {
     try {
         const response = await API.get("/orders/my");
@@ -115,7 +99,7 @@ export default function MyOrdersPage() {
             <Link to="/" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-600">
               Home
             </Link>
-            <Link to="/browse" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-600">
+            <Link to="/browse-cooks" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-600">
               Browse Cooks
             </Link>
             <Link to="/orders" className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white">My Orders</Link>
@@ -227,10 +211,10 @@ export default function MyOrdersPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getMealTypeClasses(
-                          order.mealType
+                          order.meal_type
                         )}`}
                       >
-                        {order.mealType}
+                        {order.meal_type}
                       </span>
                       <span
                         className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getStatusClasses(
@@ -246,16 +230,16 @@ export default function MyOrdersPage() {
                 <div className="px-6 py-6 sm:px-7">
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <InfoBlock label="Quantity" value={order.quantity} />
-                    <InfoBlock label="Price" value= {order.total_price} />
-                    <InfoBlock label="Ordered Date" value={new Date(order.created_at).toLocaleString()} />
+                    <InfoBlock label="Price" value={`₹${order.total_price}`} />
+                    <InfoBlock label="Ordered Date" value={new Date(order.order_date).toLocaleString()} />
                     <InfoBlock
                       label="Delivery Address"
-                      value={order.deliveryAddress}
+                      value={order.delivery_address}
                       span="md:col-span-2 xl:col-span-2"
                     />
                     <InfoBlock
                       label="Special Instructions"
-                      value={order.specialInstructions}
+                      value={order.special_instructions}
                       span="md:col-span-2 xl:col-span-1"
                     />
                   </div>
@@ -267,7 +251,7 @@ export default function MyOrdersPage() {
                     </div>
 
                     <button
-                      onClick={()=>(handleCancelOrder)}
+                      onClick={()=>(handleCancelOrder(order.id))}
                       className={`inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-sm font-bold shadow-sm transition sm:w-auto ${
                         order.order_status === "Delivered" || order.order_status === "Cancelled"
                           ? "cursor-not-allowed bg-gray-200 text-gray-500"

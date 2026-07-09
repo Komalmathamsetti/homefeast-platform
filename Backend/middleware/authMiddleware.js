@@ -11,11 +11,6 @@ const verifyToken = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-
-    console.log("TOKEN RECEIVED:", token);
-    console.log("SECRET:", process.env.JWT_SECRET);
-    console.log(req.user);
-
     const decoded = jwt.verify(
       token,
       "homefeast_secret"
