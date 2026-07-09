@@ -9,6 +9,7 @@ import ProtectedRoute from "./routes/ProtectedRoutes";
 import BrowseCooks from "./pages/BrowseCooks";
 import CookDetails from "./pages/CookDetails";
 import OrderPage from "./pages/OrderDetails"
+import MyOrders from "./pages/MyOrders";
 function App(){
   return(
     <Routes>
@@ -25,6 +26,10 @@ function App(){
             <CustomerDashboard />
           </ProtectedRoute>
         }
+      />
+      <Route
+      path="/orders"
+      element={<MyOrders/>}
       />
 
       <Route

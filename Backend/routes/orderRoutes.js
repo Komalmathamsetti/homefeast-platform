@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
-const {placeOrder,getMyOrders,getCookOrders,updateOrderStatus} = require("../controllers/orderController");
+const {placeOrder,getMyOrders,getCookOrders,updateOrderStatus,cancelOrder} = require("../controllers/orderController");
 router.post(
 "/",
 verifyToken,
@@ -30,5 +30,10 @@ verifyToken,
 authorizeRole("cook"),
 updateOrderStatus
 );
+router.put(
+    "/cancel/:id",
+    verifyToken,
+    cancelOrder
+)
 
 module.exports = router;
