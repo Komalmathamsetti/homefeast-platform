@@ -20,7 +20,7 @@ function App(){
       <Route path="/register" element={<Register />} />
 
       <Route
-        path="/customer"
+        path="/customer/dashboard"
         element={
           <ProtectedRoute role="customer">
             <CustomerDashboard />
@@ -33,7 +33,7 @@ function App(){
       />
 
       <Route
-        path="/cook"
+        path="/cook/dashboard"
         element={
           <ProtectedRoute role="cook">
             <CookDashboard />
@@ -46,7 +46,7 @@ function App(){
       />
       <Route path="/order/:id" element={<OrderPage />} />
       <Route
-        path="/admin"
+        path="/admin/dashboard"
         element={
           <ProtectedRoute role="admin">
             <AdminDashboard />

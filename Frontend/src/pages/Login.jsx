@@ -25,14 +25,22 @@ export default function HomeFeastLogin() {
       "user",
       JSON.stringify(response.data.user)
     );
+    localStorage.setItem(
+    "role",
+    response.data.user.role
+    );
+    localStorage.setItem(
+    "email",
+    response.data.user.email
+    );
     if (response.data.user.role === "customer") {
-      navigate("/customer");
+      navigate("/customer/dashboard");
     }
     else if (response.data.user.role === "cook") {
-      navigate("/cook");
+      navigate("/cook/dashboard");
     }
     else {
-      navigate("/admin");
+      navigate("/admin/dashboard");
     }
     }catch (error){
       alert(error.response?.data?.message || "Login Failed");

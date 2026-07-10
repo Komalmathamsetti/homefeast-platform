@@ -117,7 +117,18 @@ const Stars = ({ count }) => (
 
 export default function HomeFeast() {
   const [menuOpen, setMenuOpen] = useState(false);
-
+  const [dropdownOpen,setDropdownOpen] = useState(false);
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+  const email = localStorage.getItem("email");
+  const firstLetter = email?.charAt(0).toUpperCase()||"";
+  const handleLogout = ()=>{
+     localStorage.removeItem("token");
+     localStorage.removeItem("role");
+     localStorage.removeItem("email");
+     localStorage.removeItem("user");
+     window.location.href="/";
+  };
   return (
     <div className="font-sans text-gray-800 bg-white">
       {/* ── NAVBAR ── */}
@@ -129,17 +140,41 @@ export default function HomeFeast() {
           {/* Desktop links */}
           <ul className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <Link to="/" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Home</Link>
-            <Link to="/browse-cooks" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Browse Cooks</Link> 
             <Link to="/about" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">About</Link>
             <Link to="/contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Contact</Link>
           </ul>
 
           {/* Auth buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-orange-500 transition-colors px-4 py-2">Login</Link>
-            <Link to="/register" className="text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full transition-colors shadow">Register</Link>
+            {
+              !token?
+              <>
+                <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-orange-500 transition-colors px-4 py-2">Login</Link>
+                <Link to="/register" className="text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-full transition-colors shadow">Register</Link>
+              </>:
+              <div className="relative">
+                <button onClick={()=>setDropdownOpen(!dropdownOpen)} className="w-11 h-11 rounded-full bg-orange-500 text-white font-bold text-lg flex items-center justify-center">
+                  {firstLetter}
+                </button>
+                {
+                  dropdownOpen &&
+                  <div className="absolute right-0 mt-3 w-52 rounded-xl bg-white shadow-xl border border-orange-100 overflow-hidden">
+                    <button onClick={()=>{
+                      if(role==="customer"){
+                        window.location.href="/customer/dashboard";
+                      }else if(role==="cook"){
+                        window.location.href="/cook/dashboard";
+                      }else{
+                        window.location.href="/admin/dashboard";
+                      }
+                    }}className="w-full text-left px-5 py-3 hover:bg-orange-50">Dashboard
+                    </button>
+                    <button onClick={handleLogout} className="w-full text-left px-5 py-3 hover:bg-red-50 text-red-600">Logout</button>
+                  </div>
+                }
+              </div>
+            }
           </div>
-
           {/* Mobile burger */}
           <button className="md:hidden text-gray-700 text-2xl" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? "✕" : "☰"}
@@ -175,8 +210,8 @@ export default function HomeFeast() {
               Discover verified home cooks offering healthy, affordable homemade food - right to your doorstep.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-              <Link to="/browse-cooks" className="bg-orange-500 text-white hover:bg-white hover:text-orange-500 font-bold px-10 py-4 rounded-full shadow-lg transition-all">
-                Browse Cooks Now
+              <Link to="/" className="bg-orange-500 text-white hover:bg-white hover:text-orange-500 font-bold px-10 py-4 rounded-full shadow-lg transition-all">
+                Explore Homefeast
               </Link>
               <Link to="/register" className="border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-bold px-8 py-4 rounded-full transition-all text-center">
                 Become a Home Cook
@@ -270,11 +305,6 @@ export default function HomeFeast() {
               </div>
             ))}
           </div>
-          <div className="text-center mt-12">
-            <a href="#" className="inline-block border-2 border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white font-bold px-10 py-3 rounded-full transition-all">
-              See All Cooks →
-            </a>
-          </div>
         </div>
       </section>
 
@@ -349,8 +379,8 @@ export default function HomeFeast() {
           <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">Ready to eat better, every day?</h2>
           <p className="text-orange-100 mb-8 text-lg">Join thousands of families who swapped takeout for real homemade food.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/browse-cooks" className="bg-white text-orange-500 hover:bg-orange-50 font-bold px-10 py-4 rounded-full shadow-lg transition-all">
-              Browse Cooks Now
+            <Link to="/" className="bg-white text-orange-500 hover:bg-orange-50 font-bold px-10 py-4 rounded-full shadow-lg transition-all">
+              Explore Homefeast
             </Link>
             <Link to="/register" className="border-2 border-white text-white hover:bg-orange-500 hover:text-white font-bold px-8 py-4 rounded-full transition-all text-center">
                 Become a Home Cook
