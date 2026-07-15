@@ -11,11 +11,13 @@ const subscriptions = require("./routes/subscriptionRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const customerRoutes = require("./routes/customerRoutes");
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashBoardRoutes);
+app.use("/api/customer",customerRoutes);
 app.use("/api/cooks",cookRoutes);
 app.use("/api/menus",menuRoutes);
 app.use("/api/search",searchRoutes);

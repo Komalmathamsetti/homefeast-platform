@@ -1,34 +1,62 @@
-import { useState } from "react";
-
+import { useState,useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../services/api";
 const NAV = [
   { label: "Dashboard", icon: "🏠" },
+  { label: "Browse Cooks", icon: "🍱" },
+  { label: "My Orders", icon: "📦" },
+  { label: "My Subscriptions", icon: "📅" },
   { label: "Profile", icon: "👤" },
   { label: "Logout", icon: "🚪" },
 ];
-
-const stats = [
-  { label: "Orders Placed", value: "12", color: "bg-orange-100 text-orange-600" },
-  { label: "Active Orders", value: "2", color: "bg-yellow-100 text-yellow-600" },
-  { label: "Completed", value: "9", color: "bg-green-100 text-green-600" },
-  { label: "Cancelled", value: "1", color: "bg-red-100 text-red-600" },
-];
-
-const recentOrders = [
-  { id: "#ORD-001", item: "Butter Chicken", cook: "Maria G.", status: "Delivered", date: "Jun 25" },
-  { id: "#ORD-002", item: "Pasta Alfredo", cook: "Tom R.", status: "On the way", date: "Jun 26" },
-  { id: "#ORD-003", item: "Vegan Bowl", cook: "Sara K.", status: "Preparing", date: "Jun 27" },
-];
-
 const statusColor = {
+  Pending: "bg-yellow-100 text-yellow-700",
+  Preparing: "bg-blue-100 text-blue-700",
   Delivered: "bg-green-100 text-green-700",
-  "On the way": "bg-blue-100 text-blue-700",
-  Preparing: "bg-yellow-100 text-yellow-700",
+  Cancelled: "bg-red-100 text-red-700",
 };
-
 export default function CustomerDashboard() {
   const [active, setActive] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const navigate = useNavigate();
+  const [stats,setStats] = useState({
+    totalOrders:0,
+    activeSubscriptions:0,
+    pendingOrders:0,
+    completedOrders:0
+  });
+  const [recentOrders,setRecentOrders] = useState([]);
+  const [loading,setLoading] = useState(true);
+  useEffect(()=>{
+    const fetchDashboard = async()=>{
+    try{
+      const response = await API.get("/customer/dashboard");
+      setStats(response.data.stats);
+      setRecentOrders(response.data.recentOrders);
+    }catch(error){
+      console.log(error);
+    }finally{
+      setLoading(false);
+    }
+  };
+  fetchDashboard();
+  },[]);
+  const handleLogout = ()=>{
+     localStorage.removeItem("token");
+     localStorage.removeItem("role");
+     localStorage.removeItem("email");
+     localStorage.removeItem("user");
+     navigate("/");
+  }
+  if(loading){
+    return(
+      <div className="flex justify-center items-center h-screen">
+        <h1 className="text-3xl font-bold text-orange-500">
+          Loading Dashboard...
+        </h1>
+      </div>
+    )
+  }
   return (
     <div className="flex h-screen bg-orange-50 font-sans overflow-hidden">
       {/* Overlay (mobile) */}
@@ -53,7 +81,17 @@ export default function CustomerDashboard() {
           {NAV.map(({ label, icon }) => (
             <button
               key={label}
-              onClick={() => { setActive(label); setSidebarOpen(false); }}
+              onClick={() => { 
+                setActive(label); 
+                setSidebarOpen(false); 
+                if(label === "Browse Cooks"){
+                  navigate("/browse-cooks");
+                }else if(label === "My Orders"){
+                  navigate("/orders");
+                }else if(label === "My Subscriptions"){
+                  navigate("/subscriptions");
+                }
+              }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
                 ${active === label
                   ? "bg-orange-500 text-white"
@@ -98,7 +136,12 @@ export default function CustomerDashboard() {
             <>
               {/* Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {stats.map((s) => (
+                {[
+                  {label:"Orders Placed",value:stats.totalOrders,color:"bg-orange-100 text-orange-600"},
+                  {label:"Pending Orders",value:stats.pendingOrders,color:"bg-yellow-100 text-yellow-600"},
+                  {label:"Active Subscriptions",value:stats.activeSubscriptions,color:"bg-blue-100 text-blue-600"},
+                  {label:"Completed Orders",value:stats.completedOrders,color:"bg-green-100 text-green-600"}
+                ].map((s)=>(
                   <div key={s.label} className={`rounded-xl p-5 ${s.color} bg-white shadow-sm border border-gray-100`}>
                     <p className="text-2xl font-bold">{s.value}</p>
                     <p className="text-xs mt-1 font-medium opacity-80">{s.label}</p>
@@ -116,24 +159,24 @@ export default function CustomerDashboard() {
                     <thead>
                       <tr className="text-left text-gray-400 border-b border-gray-100">
                         <th className="px-6 py-3 font-medium">Order ID</th>
-                        <th className="px-6 py-3 font-medium">Item</th>
+                        <th className="px-6 py-3 font-medium">Dish</th>
                         <th className="px-6 py-3 font-medium">Cook</th>
                         <th className="px-6 py-3 font-medium">Status</th>
                         <th className="px-6 py-3 font-medium">Date</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.map((o) => (
-                        <tr key={o.id} className="border-b border-gray-50 hover:bg-orange-50 transition">
-                          <td className="px-6 py-3 font-mono text-gray-500">{o.id}</td>
-                          <td className="px-6 py-3 text-gray-800 font-medium">{o.item}</td>
-                          <td className="px-6 py-3 text-gray-600">{o.cook}</td>
+                      {recentOrders.map((order) => (
+                        <tr key={order.id} className="border-b border-gray-50 hover:bg-orange-50 transition">
+                          <td className="px-6 py-3 font-mono text-gray-500">{order.id}</td>
+                          <td className="px-6 py-3 text-gray-800 font-medium">{order.dish_name}</td>
+                          <td className="px-6 py-3 text-gray-600">{order.cook_name}</td>
                           <td className="px-6 py-3">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor[o.status]}`}>
-                              {o.status}
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor[order.order_status]}`}>
+                              {order.order_status}
                             </span>
                           </td>
-                          <td className="px-6 py-3 text-gray-400">{o.date}</td>
+                          <td className="px-6 py-3 text-gray-400">{new Date(order.order_date).toLocaleDateString()}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -172,7 +215,7 @@ export default function CustomerDashboard() {
                 <p className="text-4xl mb-4">👋</p>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">Leaving so soon?</h3>
                 <p className="text-sm text-gray-400 mb-6">You'll be logged out of your HomeFeast account.</p>
-                <button className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition">
+                <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition">
                   Confirm Logout
                 </button>
                 <button

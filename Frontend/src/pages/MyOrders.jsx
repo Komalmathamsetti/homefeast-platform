@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import API from "../services/api";
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -92,29 +91,6 @@ export default function MyOrdersPage() {
                 HomeFeast
               </p>
               <p className="text-xs text-slate-500">Premium food dashboard</p>
-            </div>
-          </div>
-
-          <div className="hidden items-center gap-2 md:flex">
-            <Link to="/" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-600">
-              Home
-            </Link>
-            <Link to="/browse-cooks" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-600">
-              Browse Cooks
-            </Link>
-            <Link to="/orders" className="rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white">My Orders</Link>
-            <Link to="/profile" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-600">
-              Profile
-            </Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-slate-900">Welcome back</p>
-              <p className="text-xs text-slate-500">Manage your orders</p>
-            </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-orange-500 to-orange-600 font-semibold text-white shadow-lg shadow-orange-200">
-              U
             </div>
           </div>
         </div>

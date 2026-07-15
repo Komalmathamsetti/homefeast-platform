@@ -1,23 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import { Link } from "react-router-dom";
-
-/*function StarRating({ rating }) {
-  const fullStars = Math.floor(rating);
-  const hasHalf = rating % 1 >= 0.5;
-
-  return (
-    <div className="flex items-center gap-1 text-amber-400">
-      {[...Array(5)].map((_, i) => (
-        <span key={i}>
-          {i < fullStars ? "★" : i === fullStars && hasHalf ? "★" : "☆"}
-        </span>
-      ))}
-      <span className="ml-1 text-sm font-medium text-slate-600">{rating}</span>
-    </div>
-  );
-}*/
-
 function CookCard({ cook }) {
   return (
     <div className="group overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-[0_8px_30px_rgba(251,146,60,0.08)] transition hover:-translate-y-1 hover:shadow-[0_14px_40px_rgba(251,146,60,0.14)]">
@@ -143,17 +126,6 @@ export default function BrowseHomeCooksPage() {
             <span className="text-xl font-extrabold tracking-tight text-slate-900">
               HomeFeast
             </span>
-          </div>
-
-          <div className="hidden items-center gap-8 md:flex">
-            <Link to="/" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Home</Link>
-            <Link to="/browse-cooks" className="text-sm font-medium text-orange-600 transition">Browse Cooks</Link> 
-            <Link to="/about" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">About</Link>
-            <Link to="/contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Contact</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/login" className="text-orange-500 hover:text-orange-600 font-semibold">Login</Link>
-            <Link to="/register" className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg">Register</Link>
           </div>
         </nav>
       </header>
