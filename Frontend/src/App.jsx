@@ -10,6 +10,7 @@ import BrowseCooks from "./pages/BrowseCooks";
 import CookDetails from "./pages/CookDetails";
 import OrderPage from "./pages/OrderDetails"
 import MyOrders from "./pages/MyOrders";
+import MySubscriptionsPage from "./pages/MySubscriptions";
 function App(){
   return(
     <Routes>
@@ -31,7 +32,10 @@ function App(){
       path="/orders"
       element={<MyOrders/>}
       />
-
+      <Route 
+         path="/subscriptions"
+         element={<MySubscriptionsPage />}
+      />
       <Route
         path="/cook/dashboard"
         element={

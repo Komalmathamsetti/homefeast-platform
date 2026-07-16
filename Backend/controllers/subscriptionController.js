@@ -1,5 +1,4 @@
 const pool = require("../db");
-
 const createSubscription = async(req,res)=>{
    try{
        const userId = req.user.userId;
@@ -8,7 +7,7 @@ const createSubscription = async(req,res)=>{
         `SELECT * FROM subscriptions
         WHERE user_id = $1
         AND cook_id = $2
-        AND status = 'active'`,
+        AND status = 'Active'`,
         [userId,cook_id]
        );
        if(existing.rows.length>0){
@@ -28,22 +27,33 @@ const createSubscription = async(req,res)=>{
    }
 };
 const getMySubscriptions = async(req,res)=>{
-   try{
-      const userId = req.user.userId;
-      const subscriptions = await pool.query(
-        `SELECT subscriptions.*,users.name
-        FROM subscriptions
-        JOIN cooks
-        ON subscriptions.cook_id = cooks.id
-        JOIN users 
-        ON cooks.user_id = users.id
-        WHERE subscriptions.user_id = $1`,[userId]
-      );
-      res.status(200).json(subscriptions.rows);
-   }catch(error){
-    console.log(error);
-    res.status(500).json({message: "Server Error"});
-   }
+    try {
+        const userId = req.user.userId;
+        const subscriptions = await pool.query(
+            `SELECT
+                subscriptions.*,
+                users.name,
+                cooks.service_area,
+                cooks.delivery_timings,
+                menus.cuisine,
+                menus.price
+            FROM subscriptions
+            JOIN cooks
+            ON subscriptions.cook_id = cooks.id
+            JOIN users
+            ON cooks.user_id = users.id
+            LEFT JOIN menus
+            ON menus.cook_id = cooks.id
+            WHERE subscriptions.user_id = $1`,
+            [userId]
+        );
+        res.status(200).json(subscriptions.rows);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Server Error"
+        });
+    }
 };
 const cancelSubscription = async(req,res)=>{
     try{

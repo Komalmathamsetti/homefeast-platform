@@ -45,57 +45,43 @@ export default function BrowseHomeCooksPage() {
   const [cooks,setCooks] = useState([]);
   const [search, setSearch] = useState("");
   const [cuisine, setCuisine] = useState("All Cuisines");
+  const [mealType, setMealType] = useState("All");
+  const [mealPlan, setMealPlan] = useState("All");
+  const [maxPrice, setMaxPrice] = useState("");
   const [loading,setLoading] = useState(true);
   const [error,setError] = useState("");
-  const fetchCooks = async () => {
-  try {
-    const response = await API.get("/search/cooks");
-    setCooks(response.data);
-  } catch (err) {
-    console.error(err);
-    setError("Unable to load cooks");
-  } finally {
-    setLoading(false);
-  }
-  };
   useEffect(() => {
-    const loadCooks = async () => {
-      await fetchCooks();
-    };
-    loadCooks();
-   }, []);
-   const searchCooks = async (keyword) => {
-    try {
-        const response = await API.get(
-          `/search?search=${keyword}`
-        );
-        setCooks(response.data);
-    }
-    catch (err) {
-      console.log(err);
-    }
-  };
-  const filterCuisine = async(value)=>{
-    try{
-      const response = await API.get(
-        `/search/filter?cuisine=${value}`
-      );
-      setCooks(response.data);
-    }catch(error){
-      console.log(error);
-    }
-  };
+    const timer = setTimeout(async () => {
+        try {
+            const response = await API.get("/search/filter", {
+                params: {
+                    search,
+                    cuisine:
+                        cuisine === "All Cuisines"
+                            ? ""
+                            : cuisine,
+                    mealType:
+                        mealType === "All"
+                            ? ""
+                            : mealType,
+                    mealPlan:
+                        mealPlan === "All"
+                            ? ""
+                            : mealPlan,
+                    maxPrice
+                }
+            });
+            setCooks(response.data);
+        } catch (error) {
+            console.log(error);
+            setError("Unable to load cooks");
+        } finally {
+            setLoading(false);
+        }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search, cuisine, mealType, mealPlan, maxPrice]);
   const filteredCooks = cooks;
-  useEffect(()=>{
-    const timer=setTimeout(()=>{
-      if(search.trim()===""){
-        fetchCooks();
-      }else{
-        searchCooks(search);
-      }
-    },500);
-    return()=>clearTimeout(timer);
-  },[search]);
   if (loading) {
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -165,11 +151,6 @@ export default function BrowseHomeCooksPage() {
                 value={cuisine}
                 onChange={(e) =>{ const value = e.target.value;
                   setCuisine(value);
-                  if(value === "All Cuisines"){
-                    fetchCooks();
-                  }else{
-                    filterCuisine(value);
-                  }
                 }}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
               >
@@ -180,6 +161,33 @@ export default function BrowseHomeCooksPage() {
                 <option>Italian</option>
                 <option>Continental</option>
               </select>
+            </div>
+            <div>
+              <label className="block mb-2 font-medium">
+                Meal Type
+              </label>
+              <select value={mealType} onChange={(e)=>setMealType(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                <option>All</option>
+                <option>Veg</option>
+                <option>Non-Veg</option>
+              </select>
+            </div>
+            <div>
+              <label className="block mb-2 font-medium">
+                Meal Plan
+              </label>
+              <select value={mealPlan} onChange={(e)=>setMealPlan(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                <option>All</option>
+                <option>Daily</option>
+                <option>Weekly</option>
+                <option>Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label className="block mb-2 font-medium">
+                Maximum Price
+              </label>
+              <input type="number" value={maxPrice} onChange={(e)=>setMaxPrice(e.target.value)} placeholder="Maximum Price" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4"/>
             </div>
           </div>
         </section>

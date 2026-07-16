@@ -30,46 +30,6 @@ const getAllCooks = async(req,res)=>{
         res.status(500).json({message:"Server Error"});
     }
 };
-const searchByCuisine = async(req,res)=>{
-    try{
-        const { cuisine } = req.query;
-        const result = await pool.query(
-            "SELECT * FROM menus WHERE cuisine ILIKE $1",
-            [`%${cuisine}%`]
-        );
-        res.status(200).json(result.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message:"Server Error"});
-    }
-};
-const filterByMealType = async(req,res)=>{
-    try{
-        const { meal_type } = req.query;
-        const result = await pool.query(
-          `SELECT * FROM menus
-           WHERE LOWER(meal_type) = LOWER($1)`,
-           [meal_type]
-        );
-        res.status(200).json(result.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message:"Server Error"});
-    }
-};
-const filterByPrice = async(req,res)=>{
-    try{
-        const { minPrice,maxPrice } = req.query;
-        const result = await pool.query(`
-            SELECT * FROM menus WHERE price BETWEEN $1 AND $2`,
-            [minPrice,maxPrice]
-        );
-        res.status(200).json(result.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message:"Server Error"});
-    }
-};
 const getCookDetails = async(req,res)=>{
     try{
         const cookId = req.params.id;
@@ -95,68 +55,78 @@ const getCookDetails = async(req,res)=>{
         res.status(500).json({message: "Server Error"});
     }
 };
-const searchCooks = async (req, res) => {
-  try {
-    const { search } = req.query;
-
-    const result = await pool.query(
-      `
-      SELECT
-        c.id,
-        u.name,
-        c.bio,
-        c.service_area,
-        c.delivery_timings,
-        c.rating
-      FROM cooks c
-      JOIN users u
-        ON c.user_id = u.id
-      WHERE
-        LOWER(u.name) LIKE LOWER($1)
-        OR LOWER(c.bio) LIKE LOWER($1)
-        OR LOWER(c.service_area) LIKE LOWER($1)
-      `,
-      [`%${search}%`]
-    );
-
-    res.status(200).json(result.rows);
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Server Error" });
-  }
-};
-const filterCuisine = async(req,res)=>{
-   try{
-    const { cuisine } = req.query;
-    const result = await pool.query(
-        `SELECT DISTINCT
-        c.id,
-        u.name,
-        c.bio,
-        c.service_area,
-        c.delivery_timings,
-        c.rating,
-        m.cuisine
+const filterCooks = async (req, res) => {
+    try {
+        const {
+            search,
+            cuisine,
+            mealType,
+            mealPlan,
+            maxPrice
+        } = req.query;
+        let query = `
+        SELECT DISTINCT
+            c.id,
+            u.name,
+            c.bio,
+            c.service_area,
+            c.delivery_timings,
+            c.rating,
+            m.price AS starting_price,
+            m.cuisine
         FROM cooks c
         JOIN users u
-        ON c.user_id=u.id
+            ON c.user_id = u.id
         LEFT JOIN menus m
-        ON c.id=m.cook_id
-        WHERE LOWER(m.cuisine)=LOWER($1)`,[cuisine]
-    );
-    res.json(result.rows);
-   }catch(error){
-    console.log(error);
-    res.status(500).json({message:"Server Error"});
-   }
+            ON c.id = m.cook_id
+        WHERE 1=1
+        `;
+        const values = [];
+        if (search) {
+            values.push(`%${search}%`);
+            query += `
+            AND (
+                LOWER(u.name) LIKE LOWER($${values.length})
+                OR LOWER(c.bio) LIKE LOWER($${values.length})
+                OR LOWER(c.service_area) LIKE LOWER($${values.length})
+            )
+            `;
+        }
+        if (cuisine) {
+            values.push(cuisine);
+            query += `
+            AND m.cuisine = $${values.length}
+            `;
+        }
+        if (mealType) {
+            values.push(mealType);
+            query += `
+            AND m.meal_type = $${values.length}
+            `;
+        }
+        if (mealPlan) {
+            values.push(mealPlan);
+            query += `
+            AND m.meal_plan = $${values.length}
+            `;
+        }
+        if (maxPrice) {
+            values.push(maxPrice);
+            query += `
+            AND m.price <= $${values.length}
+            `;
+        }
+        const cooks = await pool.query(query, values);
+        res.status(200).json(cooks.rows);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            message: "Server Error"
+        });
+    }
 };
 module.exports={
     getAllCooks,
-    searchByCuisine,
-    filterByMealType,
-    filterByPrice,
     getCookDetails,
-    searchCooks,
-    filterCuisine
+    filterCooks
 };
