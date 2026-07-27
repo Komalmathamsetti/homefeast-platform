@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -120,8 +119,8 @@ export default function HomeFeast() {
   const [dropdownOpen,setDropdownOpen] = useState(false);
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-  const email = localStorage.getItem("email");
-  const firstLetter = email?.charAt(0).toUpperCase()||"";
+  const user = JSON.parse(localStorage.getItem("user"));
+  const firstLetter = user?.name?.charAt(0).toUpperCase() || "";
   const handleLogout = ()=>{
      localStorage.removeItem("token");
      localStorage.removeItem("role");

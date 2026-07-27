@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { useParams,useSearchParams,useNavigate } from "react-router-dom";
-import API from "../services/api";
+import { useParams,useSearchParams,useNavigate,Link } from "react-router-dom";
+import API from "../../services/api";
 
 function HomeFeastNavbar() {
   return (
@@ -16,18 +16,12 @@ function HomeFeastNavbar() {
           </div>
         </div>
         <nav className="hidden items-center gap-8 md:flex">
-          <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500">
-            Home
-          </a>
-          <a href="#" className="text-sm font-medium text-orange-500">
-            Order Meals
-          </a>
-          <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500">
+          <Link to="/customer/dashoard" className="text-sm font-medium text-slate-600 hover:text-orange-500">
+            Back to Dashboard
+          </Link>
+          <Link to="/" className="text-sm font-medium text-slate-600 hover:text-orange-500">
             How it works
-          </a>
-          <a href="#" className="text-sm font-medium text-slate-600 hover:text-orange-500">
-            Contact
-          </a>
+          </Link>
         </nav>
       </div>
     </header>

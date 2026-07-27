@@ -1,6 +1,8 @@
 import { useEffect,useState } from "react";
 import { Link,useParams,useNavigate } from "react-router-dom";
-import API from "../services/api";
+import API from "../../services/api";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 const StarRating = ({ value }) => (
   <div className="flex items-center gap-1 text-orange-500">
     {"★".repeat(5).split("").map((star, i) => (
@@ -21,10 +23,7 @@ const Navbar = () => (
         <span className="text-xl font-bold text-gray-900">HomeFeast</span>
       </div>
       <nav className="hidden items-center gap-8 md:flex">
-        <Link to="/" className="text-sm font-medium text-gray-700 hover:text-orange-500">Home</Link>
-        <Link to="/browse-cooks" className="text-sm font-medium text-gray-700 hover:text-orange-500">Browse Cooks</Link>
-        <Link to="/orders" className="text-sm font-medium text-gray-700 hover:text-orange-500">Orders</Link>
-        <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-orange-500">Login</Link>
+        <Link to="/browse-cooks" className="text-sm font-medium text-gray-700 hover:text-orange-500">Back</Link>
       </nav>
       <button className="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white md:hidden">
         Menu
@@ -91,7 +90,7 @@ export default function CookDetailsPage() {
     const [menus, setMenus] = useState([]);
     const [reviews,setReviews]=useState([]);
     const [planType, setPlanType] = useState("Monthly");
-    const [isSubscribed,setIsSubscribed] = useState(false);
+    const [subscription,setSubscription] = useState(false);
     const [subscriptionLoading,setSubscriptionLoading] = useState(false);
     const [averageRating,setAverageRating]=useState({
        average_rating:0,
@@ -108,11 +107,8 @@ export default function CookDetailsPage() {
             const token = localStorage.getItem("token");
             if (token) {
               const subscriptionResponse =await API.get("/subscriptions/my");
-              const alreadySubscribed =subscriptionResponse.data.some((subscription) =>
-                subscription.cook_id === Number(id) &&
-                subscription.status === "active"
-              );
-              setIsSubscribed(alreadySubscribed);
+              const existingSubscription = subscriptionResponse.data.find((sub) => sub.cook_id === Number(id) && ["pending", "active"].includes(sub.status.toLowerCase()));
+              setSubscription(existingSubscription || null);
             }
             const reviewResponse = await API.get(`/reviews/${id}`);
             setReviews(reviewResponse.data);
@@ -134,11 +130,13 @@ export default function CookDetailsPage() {
             cook_id: Number(id),
             plan_type: planType
         });
-        setIsSubscribed(true);
-        alert("Subscription Successful");
+        const subscriptionResponse = await API.get("/subscriptions/my");
+        const existingSubscription = subscriptionResponse.data.find((sub) =>sub.cook_id === Number(id) &&["pending", "active"].includes(sub.status.toLowerCase()));
+        setSubscription(existingSubscription || null);
+        toast.success("Subscription Successful");
     }
     catch (error) {
-        alert(
+        toast.error(
             error.response?.data?.message ||
             "Subscription Failed"
         );
@@ -146,6 +144,37 @@ export default function CookDetailsPage() {
     finally {
         setSubscriptionLoading(false);
     }
+  };
+  const unsubscribeCook = async () => {
+  const result = await Swal.fire({
+    title: "Cancel Subscription?",
+    text: "You can subscribe to this cook again at any time.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Yes, Unsubscribe",
+    cancelButtonText: "Keep Subscription",
+    reverseButtons: true,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await API.put(`/subscriptions/cancel/${subscription.id}`);
+    setSubscription(null);
+    await Swal.fire({
+      title: "Cancelled!",
+      text: "Your subscription has been cancelled successfully.",
+      icon: "success",
+      confirmButtonColor: "#f97316",
+    });
+  } catch (error) {
+    toast.error(
+      error.response?.data?.message ||
+        "Unable to cancel subscription."
+    );
+  }
   };
   if (loading) {
     return (
@@ -186,16 +215,22 @@ export default function CookDetailsPage() {
             <p className="mt-5 max-w-xl text-base leading-7 text-gray-600">{cook?.bio}</p>
 
             <div className="mt-8 flex flex-wrap gap-4">
-              <select value={planType} onChange={(e)=>setPlanType(e.target.value)} className="rounded-xl border border-orange-300 px-4 py-3 bg-white">
+             {!subscription && (
+              <select value={planType} onChange={(e) => setPlanType(e.target.value)} className="rounded-xl border border-orange-300 px-4 py-3 bg-white">
                 <option value="Daily">Daily</option>
                 <option value="Weekly">Weekly</option>
                 <option value="Monthly">Monthly</option>
               </select>
-              <button onClick={subscribeCook} disabled={subscriptionLoading || isSubscribed} className={`rounded-full px-6 py-3 font-semibold text-white shadow-md transition
-              ${isSubscribed? "bg-green-500": "bg-orange-500 hover:bg-orange-600"}
-              ${subscriptionLoading? "opacity-70 cursor-not-allowed": ""}`}>
-                {subscriptionLoading? "Subscribing...": isSubscribed? "Subscribed ✓": "Subscribe"}
+              )}
+              {subscription ? (
+                <button onClick={unsubscribeCook} className="rounded-full bg-red-500 hover:bg-red-600 px-6 py-3 font-semibold text-white">
+                  Unsubscribe
+                </button>
+              ) : (
+              <button onClick={subscribeCook} disabled={subscriptionLoading} className="rounded-full bg-orange-500 hover:bg-orange-600 px-6 py-3 font-semibold text-white">
+                {subscriptionLoading? "Subscribing...": "Subscribe"}
               </button>
+            )}
               <button onClick={() => navigate(`/order/${id}`)} className="rounded-full border-2 border-orange-500 bg-white px-6 py-3 font-semibold text-orange-500 hover:bg-orange-50">
                 Order Meals
               </button>

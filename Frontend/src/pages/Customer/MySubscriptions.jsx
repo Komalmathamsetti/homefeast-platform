@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMySubscriptions,cancelSubscription} from "../services/subscriptionServices";
+import { getMySubscriptions,cancelSubscription} from "../../services/subscriptionServices";
 const statusStyles = {
   pending: "bg-yellow-100 text-yellow-700 ring-yellow-200",
   active: "bg-green-100 text-green-700 ring-green-200",

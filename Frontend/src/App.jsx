@@ -1,18 +1,26 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import CustomerDashboard from "./pages/CustomerDashboard";
-import CookDashboard from "./pages/CookDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+import Home from "./pages/common/Home";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import CustomerDashboard from "./pages/Customer/CustomerDashboard";
+import CookDashboard from "./pages/Cook/CookDashboard";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 import ProtectedRoute from "./routes/ProtectedRoutes";
-import BrowseCooks from "./pages/BrowseCooks";
-import CookDetails from "./pages/CookDetails";
-import OrderPage from "./pages/OrderDetails"
-import MyOrders from "./pages/MyOrders";
-import MySubscriptionsPage from "./pages/MySubscriptions";
+import BrowseCooks from "./pages/Customer/BrowseCooks";
+import CookDetails from "./pages/Customer/CookDetails";
+import OrderPage from "./pages/Customer/OrderDetails"
+import MyOrders from "./pages/Customer/MyOrders";
+import MySubscriptionsPage from "./pages/Customer/MySubscriptions";
+import {Toaster} from "react-hot-toast";
 function App(){
   return(
+    <>
+    <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+        }}
+      />
     <Routes>
       <Route path="/" element={<Home />} />
 
@@ -62,6 +70,7 @@ function App(){
         element={<BrowseCooks/>}
       />
     </Routes>
+    </>
   )
 };
 export default App;

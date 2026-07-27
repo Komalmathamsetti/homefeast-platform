@@ -4,21 +4,24 @@ const createSubscription = async(req,res)=>{
        const userId = req.user.userId;
        const { cook_id, plan_type } = req.body;
        const existing = await pool.query(
-        `SELECT * FROM subscriptions
+        `SELECT *
+        FROM subscriptions
         WHERE user_id = $1
         AND cook_id = $2
-        AND status = 'Active'`,
-        [userId,cook_id]
+        AND LOWER(status) IN ('pending', 'active')`,
+        [userId, cook_id]
        );
-       if(existing.rows.length>0){
-        return res.status(400).json({message: "Subscription already exists"});
+       if (existing.rows.length > 0) {
+        return res.status(400).json({
+            message: "You already have an active subscription for this cook."
+        });
        }
        const subscription = await pool.query(
         `INSERT INTO subscriptions
-        (user_id,cook_id,plan_type,start_date)
-        VALUES($1,$2,$3,CURRENT_TIMESTAMP)
+        (user_id, cook_id, plan_type, start_date,status)
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP,'Active')
         RETURNING *`,
-        [userId,cook_id,plan_type]
+        [userId, cook_id, plan_type]
        );
        res.status(201).json({message: "Subscription created",subscription: subscription.rows[0]});
    }catch(error){
@@ -31,20 +34,16 @@ const getMySubscriptions = async(req,res)=>{
         const userId = req.user.userId;
         const subscriptions = await pool.query(
             `SELECT
-                subscriptions.*,
-                users.name,
-                cooks.service_area,
-                cooks.delivery_timings,
-                menus.cuisine,
-                menus.price
+            subscriptions.*,
+            users.name,
+            cooks.service_area,
+            cooks.delivery_timings
             FROM subscriptions
             JOIN cooks
             ON subscriptions.cook_id = cooks.id
             JOIN users
             ON cooks.user_id = users.id
-            LEFT JOIN menus
-            ON menus.cook_id = cooks.id
-            WHERE subscriptions.user_id = $1`,
+            WHERE subscriptions.user_id = $1;`,
             [userId]
         );
         res.status(200).json(subscriptions.rows);

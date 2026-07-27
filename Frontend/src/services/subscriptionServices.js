@@ -4,6 +4,6 @@ export const getMySubscriptions = async()=>{
     return response.data;
 };
 export const cancelSubscription = async(id)=>{
-    const response = await API.put(`/subscriptions/${id}`);
+    const response = await API.put(`/subscriptions/cancel/${id}`);
     return response.data;
 };

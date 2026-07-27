@@ -1,6 +1,8 @@
 import { useState,useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../services/api";
+import API from "../../services/api";
+import { getProfile,updateProfile } from "../../services/customerServices";
+import toast from "react-hot-toast";
 const NAV = [
   { label: "Dashboard", icon: "🏠" },
   { label: "Browse Cooks", icon: "🍱" },
@@ -27,12 +29,22 @@ export default function CustomerDashboard() {
   });
   const [recentOrders,setRecentOrders] = useState([]);
   const [loading,setLoading] = useState(true);
+  const [profile,setProfile] = useState({
+    name:"",
+    email:"",
+    phone:"",
+    address:""
+  });
+  const [editing,setEditing] = useState(false);
+  const [saving,setSaving] = useState(false);
   useEffect(()=>{
     const fetchDashboard = async()=>{
     try{
       const response = await API.get("/customer/dashboard");
       setStats(response.data.stats);
       setRecentOrders(response.data.recentOrders);
+      const profileData = await getProfile();
+      setProfile(profileData);
     }catch(error){
       console.log(error);
     }finally{
@@ -48,6 +60,37 @@ export default function CustomerDashboard() {
      localStorage.removeItem("user");
      navigate("/");
   }
+  const handleChange = (e)=>{
+    setProfile({
+      ...profile,
+      [e.target.name]:e.target.value
+    });
+  };
+  const saveProfile = async()=>{
+    try{
+      setSaving(true);
+      const response = await updateProfile({
+        name:profile.name,
+        email:profile.email,
+        phone:profile.phone,
+        address:profile.address
+      });
+      setProfile(response.user);
+      const currentUser = JSON.parse(localStorage.getItem("user"));
+      localStorage.setItem("user",JSON.stringify({
+        ...currentUser,
+        name: response.user.name,
+        phone: response.user.phone
+      }));
+      toast.success("Profile Saved Successfully");
+      setEditing(false);
+    }catch(error){
+      console.log(error);
+      toast.error("Unable to save profile");
+    }finally{
+      setSaving(false);
+    }
+  };
   if(loading){
     return(
       <div className="flex justify-center items-center h-screen">
@@ -105,9 +148,9 @@ export default function CustomerDashboard() {
 
         <div className="px-6 py-4 border-t border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-sm">JD</div>
+            <div className="w-9 h-9 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-sm"> {profile.name? profile.name.charAt(0).toUpperCase(): "U"}</div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">Jane Doe</p>
+              <p className="text-sm font-semibold text-gray-800">{profile.name}</p>
               <p className="text-xs text-gray-400">Customer</p>
             </div>
           </div>
@@ -127,7 +170,7 @@ export default function CustomerDashboard() {
             </svg>
           </button>
           <h2 className="text-lg font-semibold text-gray-800">{active}</h2>
-          <span className="text-sm text-gray-400 hidden sm:block">Welcome back, Jane 👋</span>
+          <span className="text-sm text-gray-400 hidden sm:block">Welcome back,{profile.name} 👋</span>
         </header>
 
         {/* Content */}
@@ -187,28 +230,105 @@ export default function CustomerDashboard() {
           )}
 
           {active === "Profile" && (
-            <div className="max-w-lg bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-orange-200 flex items-center justify-center text-orange-600 font-bold text-2xl">JD</div>
+            <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-5">
+                  <div className="w-20 h-20 rounded-full bg-orange-200 flex items-center justify-center text-3xl font-bold text-orange-600">
+                    {profile.name
+                        ? profile.name.charAt(0).toUpperCase()
+                        : "U"}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">
+                      {profile.name}
+                    </h2>
+                    <p className="text-gray-500">
+                      Customer 
+                    </p>
+                  </div>
+                </div>
+                {!editing && (
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg"
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </div>
+              <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800">Jane Doe</h3>
-                  <p className="text-sm text-gray-400">Customer</p>
+                  <label className="block text-sm font-semibold mb-2">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={profile.name}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    className="w-full border rounded-lg px-4 py-3 disabled:bg-gray-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={profile.email}
+                    disabled
+                    className="w-full border rounded-lg px-4 py-3 bg-gray-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={profile.phone || ""}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    className="w-full border rounded-lg px-4 py-3 disabled:bg-gray-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Address
+                  </label>
+                  <textarea
+                    rows={4}
+                    name="address"
+                    value={profile.address || ""}
+                    onChange={handleChange}
+                    disabled={!editing}
+                    className="w-full border rounded-lg px-4 py-3 disabled:bg-gray-100"
+                  />
                 </div>
               </div>
-              <div className="space-y-4">
-                {[["Email", "jane@example.com"], ["Phone", "+1 555 000 0000"], ["Member Since", "January 2025"]].map(([label, val]) => (
-                  <div key={label} className="flex justify-between border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-500">{label}</span>
-                    <span className="text-sm font-medium text-gray-800">{val}</span>
-                  </div>
-                ))}
-              </div>
-              <button className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg text-sm font-semibold transition">
-                Edit Profile
-              </button>
+              {editing && (
+                <div className="flex gap-4 mt-8">
+                  <button
+                    onClick={saveProfile}
+                    disabled={saving}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
+                  >{saving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={async() => {
+                        setEditing(false);
+                        const profileData = await getProfile();
+                        setProfile(profileData);
+                    }}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg"
+                  >Cancel
+                  </button>
+                </div>
+              )}
             </div>
           )}
-
           {active === "Logout" && (
             <div className="flex items-center justify-center h-full">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center max-w-sm w-full">

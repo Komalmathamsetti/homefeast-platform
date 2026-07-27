@@ -14,6 +14,19 @@ const register = async (req, res) => {
             `INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
             [name, email, hashedPassword, phone, role]
         );
+        const userId = newUser.rows[0].id;
+        if(role === 'customer'){
+            await pool.query(
+                `INSERT INTO customer_profiles 
+                (user_id,address) VALUES ($1,$2)`,[userId,""]
+            );
+        }
+        if(role === 'cook'){
+            await pool.query(
+                `INSERT INTO cooks (user_id,bio,service_area,delivery_timings,approved,rating,earnings) VALUES ($1,"","","",false,0,0) RETURNING *`,
+                [userId]
+            );
+        }
         res.status(201).json({ message: "User registered successfully", user: newUser.rows[0], });
     }catch(error){
        console.log(error);

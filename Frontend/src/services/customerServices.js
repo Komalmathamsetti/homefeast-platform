@@ -1,0 +1,9 @@
+import API from "./api";
+export const getProfile = async()=>{
+   const response = await API.get("/customer/profile");
+   return response.data;
+};
+export const updateProfile = async(profileData)=>{
+    const response = API.put("/customer/profile",profileData);
+    return (await response).data;
+}
