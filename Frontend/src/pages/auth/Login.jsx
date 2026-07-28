@@ -78,6 +78,7 @@ export default function HomeFeastLogin() {
 
           {/* Logo */}
           <div className="text-center mb-8">
+            <Link to="/" className="flex items-center gap-2 font-bold text-2xl text-amber-50 tracking-tight">Home</Link>
             <span className="inline-flex items-center justify-center w-16 h-16 bg-orange-500 rounded-2xl shadow-lg text-3xl mb-4">
               🍱
             </span>

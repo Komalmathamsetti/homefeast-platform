@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const NAV_LINKS = ["Home", "Browse Cooks", "About", "Contact"];
 
@@ -121,12 +122,29 @@ export default function HomeFeast() {
   const role = localStorage.getItem("role");
   const user = JSON.parse(localStorage.getItem("user"));
   const firstLetter = user?.name?.charAt(0).toUpperCase() || "";
-  const handleLogout = ()=>{
-     localStorage.removeItem("token");
-     localStorage.removeItem("role");
-     localStorage.removeItem("email");
-     localStorage.removeItem("user");
-     window.location.href="/";
+  const navigate = useNavigate();
+  const handleLogout = async () => {
+  const result = await Swal.fire({
+    title: "Logout?",
+    text: "Are you sure you want to logout?",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Yes, Logout",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#f97316",
+    cancelButtonColor: "#6b7280",
+    reverseButtons: true,
+  });
+  if (!result.isConfirmed) return;
+  localStorage.removeItem("token");
+  await Swal.fire({
+    title: "Logged Out!",
+    text: "You have been logged out successfully.",
+    icon: "success",
+    timer: 1500,
+    showConfirmButton: false,
+  });
+  navigate("/");
   };
   return (
     <div className="font-sans text-gray-800 bg-white">

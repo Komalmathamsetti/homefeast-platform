@@ -3,6 +3,7 @@ import { useParams,useSearchParams,useNavigate,Link } from "react-router-dom";
 import API from "../../services/api";
 
 function HomeFeastNavbar() {
+  const {id} =  useParams();
   return (
     <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
@@ -16,11 +17,8 @@ function HomeFeastNavbar() {
           </div>
         </div>
         <nav className="hidden items-center gap-8 md:flex">
-          <Link to="/customer/dashoard" className="text-sm font-medium text-slate-600 hover:text-orange-500">
-            Back to Dashboard
-          </Link>
-          <Link to="/" className="text-sm font-medium text-slate-600 hover:text-orange-500">
-            How it works
+          <Link to={`/cook/${id}`} className="text-sm font-medium text-slate-600 hover:text-orange-500">
+            Back 
           </Link>
         </nav>
       </div>
@@ -153,7 +151,7 @@ function OrderSummaryCard({ dish, quantity, deliveryFee, total, grandTotal, load
         type="button"
         disabled={loading}
         onClick={handlePlaceOrder}
-        className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-4 text-base font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-80"
+        className="cursor-pointer mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-orange-500 px-5 py-4 text-base font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-80"
       >
         {loading ? "Placing Order..." : "Place Order"}
       </button>
@@ -361,7 +359,7 @@ export default function OrderMealsPage() {
                 type="button"
                 onClick={handlePlaceOrder}
                 disabled={loading}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-orange-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-80 lg:hidden"
+                className="cursor-pointer mt-6 inline-flex w-full items-center justify-center rounded-full bg-orange-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-80 lg:hidden"
               >
                 {loading ? "Placing Order..." : "Place Order"}
               </button>
@@ -406,7 +404,7 @@ export default function OrderMealsPage() {
             type="button"
             onClick={handlePlaceOrder}
             disabled={loading}
-            className="inline-flex w-full max-w-md items-center justify-center rounded-full bg-orange-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-80"
+            className="cursor-pointer inline-flex w-full max-w-md items-center justify-center rounded-full bg-orange-500 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-80"
           >
             {loading ? "Placing Order..." : "Place Order"}
           </button>

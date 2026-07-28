@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
+import { Link } from "react-router-dom";
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +94,9 @@ export default function MyOrdersPage() {
               <p className="text-xs text-slate-500">Premium food dashboard</p>
             </div>
           </div>
+          <Link to='/customer/dashboard' className="text-sm font-medium text-slate-600 hover:text-orange-500">
+            Back to Dashboard
+          </Link>
         </div>
       </nav>
 

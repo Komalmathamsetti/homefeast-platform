@@ -113,6 +113,9 @@ export default function BrowseHomeCooksPage() {
               HomeFeast
             </span>
           </div>
+          <Link to='/customer/dashboard' className="text-sm font-medium text-slate-600 hover:text-orange-500">
+            Back to Dashboard
+          </Link>
         </nav>
       </header>
 

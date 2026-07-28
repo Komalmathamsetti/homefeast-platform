@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import API from "../../services/api";
 import { getProfile,updateProfile } from "../../services/customerServices";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 const NAV = [
-  { label: "Dashboard", icon: "🏠" },
+  { label: "Home", icon: "🏠" },
+  {label:"Dashboard",icon:"📊"},
   { label: "Browse Cooks", icon: "🍱" },
   { label: "My Orders", icon: "📦" },
   { label: "My Subscriptions", icon: "📅" },
@@ -53,13 +55,29 @@ export default function CustomerDashboard() {
   };
   fetchDashboard();
   },[]);
-  const handleLogout = ()=>{
-     localStorage.removeItem("token");
-     localStorage.removeItem("role");
-     localStorage.removeItem("email");
-     localStorage.removeItem("user");
-     navigate("/");
-  }
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Are you sure you want to logout?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Logout",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#f97316",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+    localStorage.removeItem("token");
+    await Swal.fire({
+      title: "Logged Out!",
+      text: "You have been logged out successfully.",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    navigate("/");
+    };
   const handleChange = (e)=>{
     setProfile({
       ...profile,
@@ -127,7 +145,9 @@ export default function CustomerDashboard() {
               onClick={() => { 
                 setActive(label); 
                 setSidebarOpen(false); 
-                if(label === "Browse Cooks"){
+                if(label === "Home"){
+                  navigate("/");
+                }else if(label === "Browse Cooks"){
                   navigate("/browse-cooks");
                 }else if(label === "My Orders"){
                   navigate("/orders");

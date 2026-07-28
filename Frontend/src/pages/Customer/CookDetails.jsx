@@ -60,7 +60,7 @@ const MealCard = ({ meal,navigate }) => (
       <p className="text-sm leading-6 text-gray-600">{meal.description}</p>
       <div className="flex items-center justify-between">
         <span className="text-xl font-bold text-orange-500">₹ {meal.price}</span>
-        <button onClick={()=>navigate(`/order/${meal.cook_id}?menu=${meal.id}`)} className="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white">
+        <button onClick={()=>navigate(`/order/${meal.cook_id}?menu=${meal.id}`)} className="cursor-pointer rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white">
           Order Now
         </button>
       </div>
@@ -231,7 +231,7 @@ export default function CookDetailsPage() {
                 {subscriptionLoading? "Subscribing...": "Subscribe"}
               </button>
             )}
-              <button onClick={() => navigate(`/order/${id}`)} className="rounded-full border-2 border-orange-500 bg-white px-6 py-3 font-semibold text-orange-500 hover:bg-orange-50">
+              <button onClick={() => navigate(`/order/${id}`)} className="cursor-pointer rounded-full border-2 border-orange-500 bg-white px-6 py-3 font-semibold text-orange-500 hover:bg-orange-50">
                 Order Meals
               </button>
             </div>
@@ -248,7 +248,7 @@ export default function CookDetailsPage() {
 
         {/* Stats */}
         <section className="mt-8 grid gap-4 md:grid-cols-3">
-          <StatCard label="Average Rating" value={`${averageRating.average_rating} ⭐`}/>
+          <StatCard label="Average Rating" value={`${averageRating?.average_rating} ⭐`}/>
           <StatCard label="Delivery Timings" value={cook?.delivery_timings}/>
           <StatCard label="Service Area" value={cook?.service_area}/>
         </section>
@@ -268,6 +268,7 @@ export default function CookDetailsPage() {
                 <MealCard
                 key={meal.id}
                 meal={meal}
+                navigate={navigate}
                />
             ))
         ) : (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Link } from "react-router-dom";
 import { getMySubscriptions,cancelSubscription} from "../../services/subscriptionServices";
 const statusStyles = {
   pending: "bg-yellow-100 text-yellow-700 ring-yellow-200",
@@ -220,7 +220,24 @@ export default function MySubscriptionsPage() {
     }
   }
   return (
+    
     <div className="min-h-screen bg-[#FFF9F5] px-4 py-8 text-slate-900 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-500 text-lg font-bold text-white shadow-lg shadow-orange-200">
+            HF
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-slate-900">HomeFeast</p>
+            <p className="text-xs text-slate-500">Fresh meals, delivered with care</p>
+          </div>
+        </div>
+        <nav className="hidden items-center gap-8 md:flex">
+          <Link to="/customer/dashboard" className="text-sm font-medium text-slate-600 hover:text-orange-500">
+            Back to Dashboard
+          </Link>
+        </nav>
+      </div>
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
