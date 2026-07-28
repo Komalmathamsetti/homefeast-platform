@@ -1,32 +1,32 @@
 import { useState } from "react";
-
 const NAV = [
-  { label: "Dashboard", icon: "🍳" },
+  {label:"Home",icon:"🏠"},
+  { label: "Dashboard", icon: "📊" },
   { label: "Profile", icon: "👤" },
+  { label: "My Menu", icon: "🍱" },
+  { label: "Subscriptions", icon: "📋" },
+  { label: "Orders", icon: "🛒" },
+  { label: "Earnings", icon: "💰" },
   { label: "Logout", icon: "🚪" },
 ];
-
 const stats = [
   { label: "Total Orders", value: "38", color: "bg-orange-100 text-orange-600" },
   { label: "Pending", value: "5", color: "bg-yellow-100 text-yellow-600" },
   { label: "Completed Today", value: "7", color: "bg-green-100 text-green-600" },
   { label: "Avg Rating", value: "4.8★", color: "bg-purple-100 text-purple-600" },
 ];
-
 const orders = [
   { id: "#ORD-101", item: "Butter Chicken", customer: "Jane D.", status: "Preparing", time: "12:30 PM" },
   { id: "#ORD-102", item: "Biryani", customer: "Mark S.", status: "Ready", time: "12:45 PM" },
   { id: "#ORD-103", item: "Pasta Alfredo", customer: "Amy L.", status: "Pending", time: "1:00 PM" },
   { id: "#ORD-104", item: "Grilled Salmon", customer: "Chris T.", status: "Delivered", time: "11:50 AM" },
 ];
-
 const statusColor = {
   Pending: "bg-gray-100 text-gray-600",
   Preparing: "bg-yellow-100 text-yellow-700",
   Ready: "bg-blue-100 text-blue-700",
   Delivered: "bg-green-100 text-green-700",
 };
-
 export default function CookDashboard() {
   const [active, setActive] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);

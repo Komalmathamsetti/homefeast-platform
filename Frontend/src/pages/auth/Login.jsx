@@ -2,7 +2,7 @@ import { useState } from "react";
 import API from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-
+import toast from "react-hot-toast";
 export default function HomeFeastLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -43,7 +43,7 @@ export default function HomeFeastLogin() {
       navigate("/admin/dashboard");
     }
     }catch (error){
-      alert(error.response?.data?.message || "Login Failed");
+      toast.error(error.response?.data?.message || "Login Failed");
     }
   };
   return (

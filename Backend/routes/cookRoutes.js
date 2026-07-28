@@ -7,8 +7,7 @@ const {
     getCookProfile,
     updateCookProfile   
 }  = require('../controllers/cookController');
-
 router.post("/",verifyToken,authorizeRole("cook"),createcookProfile);
-router.get("/:id",getCookProfile);
-router.put("/",verifyToken,authorizeRole("cook"),updateCookProfile);
+router.get("/profile",verifyToken,authorizeRole("cook"),getCookProfile);
+router.put("/profile",verifyToken,authorizeRole("cook"),updateCookProfile);
 module.exports = router;

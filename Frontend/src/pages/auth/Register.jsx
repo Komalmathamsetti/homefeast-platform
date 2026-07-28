@@ -2,7 +2,7 @@ import { useState } from "react";
 import API from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-
+import toast from "react-hot-toast";
 export default function Register() {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -30,10 +30,10 @@ export default function Register() {
       role: formData.role,
     };
     const response = await API.post("/auth/register", payload);
-    alert(response.data.message);
+    toast.success(response.data.message);
     navigate("/login");
    }catch (error) {
-    alert(error.response?.data?.message || "Registration Failed");
+    toast.error(error.response?.data?.message || "Registration Failed");
    }
   };
   return (
