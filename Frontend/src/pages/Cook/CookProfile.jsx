@@ -1,60 +1,178 @@
+import { useState,useEffect } from "react";
+import Swal from "sweetalert2";
+import toast from "react-hot-toast";
+import { getCookProfile,updateCookProfile } from "../../services/cookService";
 export default function CookProfilePage() {
+  const [profile,setProfile] = useState({
+    name:"",
+    email:"",
+    phone:"",
+    bio:"",
+    service_area:"",
+    delivery_timings:"",
+    rating:0,
+    approved:false
+  });
+  const [loading,setLoading] = useState(true);
+  const [saving,setSaving] = useState(false);
+    const fetchProfile = async()=>{
+      try{
+        setLoading(true);
+        const response = await getCookProfile();
+        if(response.data.success){
+          setProfile(response.data.profile);
+        }
+      }catch(error){
+        toast.error(error.response?.data?.message || "Unable to load Profile");
+      }finally{
+        setLoading(false);
+      }
+    };
+    const handleSave = async()=>{
+      if(!profile.name.trim())
+        return toast.error("Name field required");
+      if(!profile.phone.trim())
+        return toast.error("Phone Number required");
+      if(!profile.bio.trim())
+        return toast.error("Bio is required");
+      if (!profile.service_area.trim())
+        return toast.error("Service Area is required");
+      if (!profile.delivery_timings.trim())
+        return toast.error("Delivery Timings are required");
+      try{
+        setSaving(true);
+        const response = await updateCookProfile(profile);
+        if (response.data.success) {
+          Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: "Profile Updated Successfully",
+            timer: 1500,
+            showConfirmButton: false,
+          });
+          await fetchProfile();
+        }
+      }catch(error){
+        console.log("Error:", error);
+  console.log("Response:", error.response);
+  console.log("Data:", error.response?.data);
+
+        toast.error(error.response?.data?.message || "Unable to update Profile");
+      }finally{
+        setSaving(false);
+      }
+    }
+  useEffect(() => {
+  const loadProfile = async () => {
+    await fetchProfile();
+  };
+  loadProfile();
+  }, []);
+  if (loading) {
   return (
+    <div className="min-h-screen flex justify-center items-center">
+      <h1 className="text-3xl font-bold">
+        Loading Profile...
+      </h1>
+    </div>
+  );
+  }
+return (
     <div className="page">
       <div className="container">
         <div className="card">
-          <div className="header">
-            <h1>Cook Profile</h1>
-            <p>Manage your personal details and delivery settings.</p>
+          <div className="flex items-center gap-5 mb-8">
+            <div className="w-20 h-20 rounded-full bg-linear-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+              {profile.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-orange-600">
+                Cook Profile
+              </h1>
+              <p className="text-gray-500 mt-1">
+                Manage your personal details and delivery settings.
+              </p>
+            </div>
           </div>
 
           <div className="formGrid">
             <div className="field">
               <label>Full Name</label>
-              <input type="text" defaultValue="Aarav Sharma" />
+              <input type="text" 
+                value={profile.name} 
+                onChange={(e)=>
+                  setProfile({
+                    ...profile,
+                    name:e.target.value,
+                  })
+                }
+              />
             </div>
 
             <div className="field">
               <label>Email</label>
-              <input type="email" defaultValue="aarav@homefeast.com" readOnly />
+              <input type="email" value={profile.email} readOnly />
             </div>
 
             <div className="field">
               <label>Phone Number</label>
-              <input type="tel" defaultValue="+91 98765 43210" />
+              <input type="tel" 
+                value={profile?.phone}
+                onChange={(e)=>
+                  setProfile({
+                    ...profile,
+                    phone:e.target.value
+                  })
+                } />
             </div>
 
             <div className="field full">
               <label>Bio</label>
               <textarea
                 rows="4"
-                defaultValue="Homemade meals prepared with fresh ingredients and delivered daily."
+                value={profile?.bio}
+                onChange={(e)=>{
+                  setProfile({
+                    ...profile,
+                    bio:e.target.value
+                  })
+                }}
               />
             </div>
 
             <div className="field">
               <label>Service Area</label>
-              <input type="text" defaultValue="Andheri, Mumbai" />
+              <input type="text" value={profile?.service_area}
+              onChange={(e)=>{
+                setProfile({
+                  ...profile,
+                  service_area:e.target.value
+                })
+              }} />
             </div>
 
             <div className="field">
               <label>Delivery Timings</label>
-              <input type="text" defaultValue="Mon - Sat, 11:00 AM - 8:00 PM" />
+              <input type="text" valuealue={profile?.delivery_timings}
+              onChange={(e)=>{
+                setProfile({
+                  ...profile,
+                  delivery_timings:e.target.value
+                })
+              }} />
             </div>
           </div>
 
           <div className="statsGrid">
             <div className="statCard">
               <span>Average Rating</span>
-              <strong>4.8 / 5</strong>
-            </div>
-            <div className="statCard">
-              <span>Approval Status</span>
-              <strong className="approved">Approved</strong>
+              <strong>⭐ {profile.rating}/5</strong>
             </div>
           </div>
 
-          <button className="saveBtn">Save Changes</button>
+          <button className="saveBtn" onClick={handleSave} disabled={saving}>
+            {saving?"Saving...":"Save Changes"}
+          </button>
         </div>
       </div>
 
@@ -155,6 +273,9 @@ export default function CookProfilePage() {
         }
         .approved {
           color: #d66d00 !important;
+        }
+        .pending{
+          color:#d97706 !important;
         }
         .saveBtn {
           width: 100%;

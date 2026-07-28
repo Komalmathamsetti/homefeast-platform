@@ -57,7 +57,8 @@ const getCookProfile = async (req, res) => {
             message: "Cook not found"
           });
         }
-      res.status(200).json(cook.rows[0]);
+      res.status(200).json({success:true,
+        profile:cook.rows[0]});
     } catch (error) {
       console.log(error);
       res.status(500).json({
