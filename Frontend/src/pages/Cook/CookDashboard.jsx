@@ -5,6 +5,7 @@ import CookMenu from "./CookMenu";
 import CookOrders from "./CookOrders";
 import CookProfile from "./CookProfile";
 import CookSubscriptions from "./CookSubscriptions";
+import AddMealForm from "./MealForm";
 import Swal from "sweetalert2";
 const NAV = [
   { label: "Home", icon: "🏠" },
@@ -18,23 +19,49 @@ const NAV = [
 ];
 export default function CookDashboard() {
   const [active, setActive] = useState("Dashboard");
+  const [selectedMeal,setSelectedMeal] = useState(null);
+  const [refreshMenu,setRefreshMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading,setLoading] = useState(true);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
-  const renderPage = ()=>{
-    switch(active){
-      case "Profile":
-        return <CookProfile/>
-      case "My Menu":
-        return <CookMenu/>
-      case "Orders":
-        return <CookOrders/>
-      case "Subscriptions":
-        return <CookSubscriptions/>
-      case "Earnings":
-        return <CookEarnings/>
-    }
+  const renderPage = () => {
+  switch (active) {
+    case "Profile":
+      return <CookProfile />;
+    case "My Menu":
+      return (
+        <CookMenu
+          setActive={setActive}
+          setSelectedMeal={setSelectedMeal}
+          refreshMenu={refreshMenu}
+        />
+      );
+    case "Add Meal":
+      return (
+        <AddMealForm
+          setActive={setActive}
+          selectedMeal={null}
+          setRefreshMenu={setRefreshMenu}
+        />
+      );
+    case "Edit Meal":
+      return (
+        <AddMealForm
+          setActive={setActive}
+          selectedMeal={selectedMeal}
+          setRefreshMenu={setRefreshMenu}
+        />
+      );
+    case "Orders":
+      return <CookOrders />;
+    case "Subscriptions":
+      return <CookSubscriptions />;
+    case "Earnings":
+      return <CookEarnings />;
+    default:
+      return null;
+  }
   };
   const handleLogout = async () => {
     const result = await Swal.fire({

@@ -134,6 +134,7 @@ const updateCookProfile = async (req, res) => {
             [userId]
         );
         res.status(200).json({
+          success:true,
           message: "Profile updated successfully.",
           profile: updatedProfile.rows[0]
         });

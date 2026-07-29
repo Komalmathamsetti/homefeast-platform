@@ -5,8 +5,7 @@ export const getAllCooks = async () => {
   return response.data;
 };
 export const getCookProfile = async()=>{
-  const response = await API.get("/cooks/profile");
-  return response.data;
+  return API.get("/cooks/profile");
 };
 export const updateCookProfile = async(profileData)=>{
   return API.put("/cooks/profile",profileData);

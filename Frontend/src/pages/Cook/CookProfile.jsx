@@ -53,10 +53,9 @@ export default function CookProfilePage() {
           await fetchProfile();
         }
       }catch(error){
-        console.log("Error:", error);
-  console.log("Response:", error.response);
-  console.log("Data:", error.response?.data);
-
+         console.log("Save Error:", error);
+  console.log("Status:", error.response?.status);
+  console.log("Response:", error.response?.data);
         toast.error(error.response?.data?.message || "Unable to update Profile");
       }finally{
         setSaving(false);
@@ -153,7 +152,7 @@ return (
 
             <div className="field">
               <label>Delivery Timings</label>
-              <input type="text" valuealue={profile?.delivery_timings}
+              <input type="text" value={profile?.delivery_timings}
               onChange={(e)=>{
                 setProfile({
                   ...profile,
