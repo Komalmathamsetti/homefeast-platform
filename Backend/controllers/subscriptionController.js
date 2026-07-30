@@ -19,7 +19,7 @@ const createSubscription = async(req,res)=>{
        const subscription = await pool.query(
         `INSERT INTO subscriptions
         (user_id, cook_id, plan_type, start_date,status)
-        VALUES ($1, $2, $3, CURRENT_TIMESTAMP,'Active')
+        VALUES ($1, $2, $3, CURRENT_DATE,'Pending')
         RETURNING *`,
         [userId, cook_id, plan_type]
        );
@@ -108,9 +108,59 @@ const getCookSubscribers = async(req,res)=>{
     res.status(500).json({message:"Server Error"});
    }
 };
+const updateSubscription = async(req,res)=>{
+  try{
+    const userId = req.user.userId; 
+    const { id } = req.params;
+    const { status } = req.body;
+    if(!["Active","Rejected"].includes(status)){
+        return res.status(400).json({
+            success:false,
+            message:"Invalid status"
+        });
+    }
+    const cook = await pool.query(
+        `SELECT * FROM cooks 
+        WHERE user_id = $1`,[userId]
+    );
+    if(cook.rows.length === 0){
+        return res.status(404).json({
+            message:"No cooks found"
+        });
+    }
+    const cookId = cook.rows[0].id;
+    const subscription = await pool.query(
+        `SELECT * FROM subscriptions
+        WHERE id = $1
+        AND cook_id = $2`,[id,cookId]
+    );
+    if(subscription.rows.length === 0){
+        return res.status({
+            message:"Unauthorised"
+        });
+    }
+    const updated = await pool.query(
+        `UPDATE subscriptions
+        SET status = $1
+        WHERE id = $2
+        RETURNING*`,[status,id]
+    );
+    res.status(200).json({
+        success:true,
+        subscription:updated.rows[0]
+    });
+  }catch(error){
+    console.log(error);
+    res.status(500).json({
+        success:false,
+        message:"Server Error"
+    });
+  }
+};
 module.exports = {
     createSubscription,
     getMySubscriptions,
     cancelSubscription,
-    getCookSubscribers
+    getCookSubscribers,
+    updateSubscription
 };

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
-const { createSubscription,getMySubscriptions,cancelSubscription,getCookSubscribers } = require("../controllers/subscriptionController");
+const { createSubscription,getMySubscriptions,cancelSubscription,getCookSubscribers,updateSubscription } = require("../controllers/subscriptionController");
 router.post(
 "/",
 verifyToken,
@@ -29,6 +29,12 @@ router.get(
 verifyToken,
 authorizeRole("cook"),
 getCookSubscribers
+);
+router.put(
+    "/:id/status",
+    verifyToken,
+    authorizeRole("cook"),
+    updateSubscription
 );
 
 module.exports = router;
