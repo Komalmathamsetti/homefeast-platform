@@ -1,73 +1,69 @@
-import { useMemo, useState } from "react";
-
-const initialOrders = [
-  {
-    id: "HF-1001",
-    customer: "Rahul Mehta",
-    meal: "Veg Thali",
-    quantity: 2,
-    address: "Andheri West, Mumbai",
-    status: "Pending",
-  },
-  {
-    id: "HF-1002",
-    customer: "Ananya Shah",
-    meal: "Paneer Wrap",
-    quantity: 1,
-    address: "Juhu, Mumbai",
-    status: "Preparing",
-  },
-  {
-    id: "HF-1003",
-    customer: "Karan Patel",
-    meal: "Chicken Biryani",
-    quantity: 3,
-    address: "Bandra East, Mumbai",
-    status: "Ready",
-  },
-  {
-    id: "HF-1004",
-    customer: "Sneha Kapoor",
-    meal: "South Indian Combo",
-    quantity: 2,
-    address: "Powai, Mumbai",
-    status: "Delivered",
-  },
-];
-
+import { useMemo, useState,useEffect } from "react";
+import toast from "react-hot-toast";
+import { getCookOrders,updateOrderStatus as updateOrderStatusAPI } from "../../services/orderServices";
 const statusStyles = {
   Pending: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
   Preparing: "bg-orange-100 text-orange-700 ring-1 ring-orange-200",
   Ready: "bg-blue-100 text-blue-700 ring-1 ring-blue-200",
   Delivered: "bg-green-100 text-green-700 ring-1 ring-green-200",
+  Cancelled: "bg-gray-100 text-gray-700 ring-1 ring-gray-300",
 };
 
 export default function OrdersManagementPage() {
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState([]);
+  const [loading,setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const matchesSearch =
-        order.id.toLowerCase().includes(search.toLowerCase()) ||
-        order.customer.toLowerCase().includes(search.toLowerCase()) ||
-        order.meal.toLowerCase().includes(search.toLowerCase()) ||
-        order.address.toLowerCase().includes(search.toLowerCase());
+        order.id.toString().includes(search.toLowerCase()) ||
+        order.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+        order.dish_name.toLowerCase().includes(search.toLowerCase()) ||
+        order.delivery_address.toLowerCase().includes(search.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "All" || order.status === statusFilter;
+        statusFilter === "All" || order.order_status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
   }, [orders, search, statusFilter]);
-
-  const updateOrderStatus = (id, status) => {
-    setOrders((prev) =>
-      prev.map((order) => (order.id === id ? { ...order, status } : order))
+    const fetchOrders = async()=>{
+      try{
+        setLoading(true);
+        const response = await getCookOrders();
+        setOrders(response);
+      }catch(error){
+        toast.error(error.response?.data?.message || "Unable to fetch Orders");
+      }finally{
+        setLoading(false);
+      }
+    }
+    useEffect(() => {
+    const load = async () => {
+        await fetchOrders();
+    };
+    load();
+  }, []);
+  const changeStatus = async(id,status)=>{
+    try{
+      await updateOrderStatusAPI(id,status);
+      toast.success("Status Updated");
+      fetchOrders();
+    }catch(error){
+      toast.error(error.response?.data?.message);
+    }
+  }
+  if(loading){
+    return(
+    <div className="min-h-screen flex justify-center items-center">
+      <h1 className="text-3xl font-bold">
+        Loading...
+      </h1>
+    </div>
     );
-  };
-
+  }
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-orange-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -128,22 +124,22 @@ export default function OrdersManagementPage() {
                   <td className="px-6 py-4 font-medium text-gray-900">
                     {order.id}
                   </td>
-                  <td className="px-6 py-4 text-gray-700">{order.customer}</td>
-                  <td className="px-6 py-4 text-gray-700">{order.meal}</td>
+                  <td className="px-6 py-4 text-gray-700">{order.customer_name}</td>
+                  <td className="px-6 py-4 text-gray-700">{order.dish_name}</td>
                   <td className="px-6 py-4 text-gray-700">{order.quantity}</td>
-                  <td className="px-6 py-4 text-gray-700">{order.address}</td>
+                  <td className="px-6 py-4 text-gray-700">{order.delivery_address}</td>
                   <td className="px-6 py-4">
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.status]}`}
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.order_status]}`}
                     >
-                      {order.status}
+                      {order.order_status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <select
-                      value={order.status}
+                      value={order.order_status}
                       onChange={(e) =>
-                        updateOrderStatus(order.id, e.target.value)
+                        changeStatus(order.id, e.target.value)
                       }
                       className="rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                     >
@@ -170,19 +166,19 @@ export default function OrdersManagementPage() {
                   <h3 className="text-lg font-semibold text-gray-900">
                     {order.id}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-600">{order.customer}</p>
+                  <p className="mt-1 text-sm text-gray-600">{order.customer_name}</p>
                 </div>
                 <span
-                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.status]}`}
+                  className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[order.order_status]}`}
                 >
-                  {order.status}
+                  {order.order_status}
                 </span>
               </div>
 
               <div className="mt-4 space-y-2 text-sm text-gray-700">
                 <p>
                   <span className="font-medium text-gray-900">Meal:</span>{" "}
-                  {order.meal}
+                  {order.dish_name}
                 </p>
                 <p>
                   <span className="font-medium text-gray-900">Quantity:</span>{" "}
@@ -190,7 +186,7 @@ export default function OrdersManagementPage() {
                 </p>
                 <p>
                   <span className="font-medium text-gray-900">Address:</span>{" "}
-                  {order.address}
+                  {order.delivery_address}
                 </p>
               </div>
 
@@ -199,8 +195,8 @@ export default function OrdersManagementPage() {
                   Update Status
                 </label>
                 <select
-                  value={order.status}
-                  onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                  value={order.order_status}
+                  onChange={(e) => changeStatus(order.id, e.target.value)}
                   className="w-full rounded-2xl border border-orange-200 bg-white px-4 py-3 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                 >
                   <option>Pending</option>

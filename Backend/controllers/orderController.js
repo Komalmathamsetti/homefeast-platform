@@ -81,16 +81,34 @@ const getCookOrders = async(req,res)=>{
         }
 
         const orders = await pool.query(
-            `SELECT * FROM orders
-             WHERE cook_id = $1`,
-            [cook.rows[0].id]
-        );
-
+  `
+  SELECT
+      orders.id,
+      orders.quantity,
+      orders.total_price,
+      orders.order_status,
+      orders.order_date,
+      orders.delivery_address,
+      orders.special_instructions,
+      users.name AS customer_name,
+      users.email AS customer_email,
+      menus.dish_name,
+      menus.meal_type,
+      menus.price
+  FROM orders
+  INNER JOIN users
+      ON orders.user_id = users.id
+  INNER JOIN menus
+      ON orders.menu_id = menus.id
+  WHERE orders.cook_id = $1
+  ORDER BY orders.order_date DESC
+  `,
+  [cook.rows[0].id]
+);
         res.status(200).json(orders.rows);
 
     }catch(error){
         console.log(error);
-
         res.status(500).json({
             message: "Server Error"
         });
@@ -98,16 +116,38 @@ const getCookOrders = async(req,res)=>{
 };
 const updateOrderStatus = async (req, res) => {
     try {
+        const userId = req.user.userId;
         const orderId = req.params.id;
         const { status } = req.body;
+        const cook = await pool.query(
+            `SELECT * FROM cooks
+            WHERE user_id = $1`,[userId]
+        );
+        if(cook.rows.length === 0){
+            return res.status(403).json({
+                message:"Cook Not found"
+            });
+        }
         const order = await pool.query(
             `SELECT * FROM orders
-             WHERE id = $1`,
-            [orderId]
+             WHERE id = $1
+             AND cook_id = $2`,
+            [orderId,cook.rows[0].id]
         );
         if (order.rows.length === 0) {
             return res.status(404).json({
                 message: "Order not found"
+            });
+        }
+        const validateStatuses = [
+            "Pending",
+            "Preparing",
+            "Ready",
+            "Delivered"
+        ];
+        if(!validateStatuses.includes(status)){
+            return res.status(403).json({
+                message:"Invalid Status"
             });
         }
         const updatedOrder = await pool.query(

@@ -25,7 +25,7 @@ getCookOrders
 );
 
 router.put(
-"/:id",
+"/:id/status",
 verifyToken,
 authorizeRole("cook"),
 updateOrderStatus
