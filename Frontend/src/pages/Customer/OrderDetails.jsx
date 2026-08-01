@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useParams,useSearchParams,useNavigate,Link } from "react-router-dom";
 import API from "../../services/api";
-
+import toast from "react-hot-toast";
 function HomeFeastNavbar() {
   const {id} =  useParams();
   return (
@@ -211,17 +211,17 @@ export default function OrderMealsPage() {
   const handlePlaceOrder = async () => {
     // Check if a meal is selected
     if (!selectedDish) {
-        alert("Please select a meal.");
+        toast.error("Please select a meal.");
         return;
     }
     // Quantity validation
     if (quantity < 1) {
-        alert("Quantity must be at least 1.");
+        toast.error("Quantity must be at least 1.");
         return;
     }
     // Delivery Address validation
     if (address.trim() === "") {
-        alert("Please enter your delivery address.");
+        toast.error("Please enter your delivery address.");
         return;
     }
     try {
@@ -244,7 +244,7 @@ export default function OrderMealsPage() {
     }
     catch (error) {
         console.log(error);
-        alert(
+        toast.error(
             error.response?.data?.message ||
             "Unable to place order."
         );

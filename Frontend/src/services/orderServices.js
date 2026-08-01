@@ -10,3 +10,7 @@ export const updateOrderStatus = async (id, status) => {
     );
     return response.data;
 };
+export const getCookEarnings = async()=>{
+    const response = await API.get("/orders/earnings");
+    return response.data;
+};

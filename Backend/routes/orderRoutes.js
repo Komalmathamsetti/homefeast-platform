@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
-const {placeOrder,getMyOrders,getCookOrders,updateOrderStatus,cancelOrder} = require("../controllers/orderController");
+const {placeOrder,getMyOrders,getCookOrders,updateOrderStatus,cancelOrder,getCookEarnings} = require("../controllers/orderController");
 router.post(
 "/",
 verifyToken,
@@ -34,6 +34,12 @@ router.put(
     "/cancel/:id",
     verifyToken,
     cancelOrder
-)
+);
+router.get(
+    "/earnings",
+    verifyToken,
+    authorizeRole("cook"),
+    getCookEarnings
+);
 
 module.exports = router;

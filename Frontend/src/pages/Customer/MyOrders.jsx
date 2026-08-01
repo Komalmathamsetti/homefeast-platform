@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import API from "../../services/api";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,18 +57,24 @@ export default function MyOrdersPage() {
     }
   };
   const handleCancelOrder = async (orderId) => {
-    const confirmCancel = window.confirm(
-        "Are you sure you want to cancel this order?"
-    );
-    if (!confirmCancel) return;
+    const confirmCancel = await Swal.fire({
+      title: "Confirm Cancellation",
+      text: "Are you sure you want to cancel this order?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, cancel it!"
+    });
+    if (!confirmCancel.isConfirmed) return;
     try {
         await API.put(`/orders/cancel/${orderId}`);
-        alert("Order cancelled successfully.");
+        toast.success("Order cancelled successfully.");
         fetchOrders();
     }
     catch (error) {
         console.log(error);
-        alert(
+        toast.error(
             error.response?.data?.message ||
             "Unable to cancel order."
         );

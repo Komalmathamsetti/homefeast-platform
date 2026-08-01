@@ -1,47 +1,54 @@
-const summaryCards = [
-  { label: "Today's Earnings", value: "₹2,450" },
-  { label: "Weekly Earnings", value: "₹14,800" },
-  { label: "Monthly Earnings", value: "₹62,300" },
-  { label: "Lifetime Earnings", value: "₹4,28,900" },
-];
-
-const transactions = [
-  {
-    date: "2026-07-28",
-    customer: "Rahul Mehta",
-    orderId: "HF-1001",
-    amount: "₹450",
-    status: "Completed",
-  },
-  {
-    date: "2026-07-27",
-    customer: "Ananya Shah",
-    orderId: "HF-1002",
-    amount: "₹620",
-    status: "Completed",
-  },
-  {
-    date: "2026-07-27",
-    customer: "Karan Patel",
-    orderId: "HF-1003",
-    amount: "₹980",
-    status: "Pending",
-  },
-  {
-    date: "2026-07-26",
-    customer: "Sneha Kapoor",
-    orderId: "HF-1004",
-    amount: "₹1,200",
-    status: "Completed",
-  },
-];
+import { useState,useEffect } from "react";
+import { getCookEarnings } from "../../services/orderServices";
+import toast from "react-hot-toast";
 
 const statusStyles = {
-  Completed: "bg-green-100 text-green-700 ring-1 ring-green-200",
-  Pending: "bg-amber-100 text-amber-700 ring-1 ring-amber-200",
+    Delivered:"bg-green-100 text-green-700 ring-1 ring-green-200",
+    Pending:"bg-amber-100 text-amber-700 ring-1 ring-amber-200",
+    Preparing:"bg-orange-100 text-orange-700 ring-1 ring-orange-200",
+    Ready:"bg-blue-100 text-blue-700 ring-1 ring-blue-200",
+    Cancelled:"bg-red-100 text-red-700 ring-1 ring-red-200"
 };
-
 export default function EarningsDashboard() {
+  const [summary,setSummary] = useState({
+    today:0,
+    week:0,
+    month:0,
+    lifetime:0
+  });
+  const summaryCards=[
+    {label:"Today's Earnings",value:`₹${summary.today}`},
+    {label:"Weekly Earnings",value:`₹${summary.weekly}`},
+    {label:"Monthly Earnings",value:`₹${summary.monthly}`},
+    {label:"Lifetime Earnings",value:`₹${summary.lifetime}`}
+  ];
+  const [transactions,setTransactions] = useState([]);
+  const [loading,setLoading] = useState(true);
+  useEffect(()=>{
+    const fetchEarnings = async()=>{
+      try{
+        setLoading(true);
+        const response = await getCookEarnings();
+        setSummary(response.summary);
+        setTransactions(response.transactions);
+      }catch(error){
+        console.log(error);
+        toast.error(error.response?.data?.message || "Unable to fetch earnings.");
+      }finally{
+        setLoading(false);
+      }
+    }
+    fetchEarnings();
+  },[]);
+  if(loading){
+    return(
+    <div className="min-h-screen flex justify-center items-center">
+      <h1 className="text-3xl font-bold">
+        Loading...
+      </h1>
+    </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-linear-to-b from-white to-orange-50 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -67,7 +74,6 @@ export default function EarningsDashboard() {
             </div>
           ))}
         </div>
-
         <div className="mt-6 rounded-3xl border border-orange-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -79,7 +85,6 @@ export default function EarningsDashboard() {
               </p>
             </div>
           </div>
-
           <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-orange-200 bg-orange-50/60 text-center">
             <div>
               <div className="text-5xl">📈</div>
@@ -114,20 +119,20 @@ export default function EarningsDashboard() {
               <tbody>
                 {transactions.map((tx) => (
                   <tr
-                    key={tx.orderId}
+                    key={`#${tx.id}`}
                     className="border-t border-orange-100 transition hover:bg-orange-50/60"
                   >
-                    <td className="px-6 py-4 text-gray-700">{tx.date}</td>
-                    <td className="px-6 py-4 text-gray-900">{tx.customer}</td>
-                    <td className="px-6 py-4 text-gray-700">{tx.orderId}</td>
+                    <td className="px-6 py-4 text-gray-700">{new Date(tx.order_date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-gray-900">{tx.customer_name}</td>
+                    <td className="px-6 py-4 text-gray-700">#${tx.id}</td>
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {tx.amount}
+                      {`₹${tx.total_price}`}
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[tx.status]}`}
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[tx.order_status]}`}
                       >
-                        {tx.status}
+                        {tx.order_status}
                       </span>
                     </td>
                   </tr>
@@ -139,28 +144,28 @@ export default function EarningsDashboard() {
           <div className="space-y-4 p-5 md:hidden">
             {transactions.map((tx) => (
               <div
-                key={tx.orderId}
+                key={`#${tx.id}`}
                 className="rounded-2xl border border-orange-100 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">{tx.customer}</p>
-                    <p className="mt-1 text-sm text-gray-500">{tx.orderId}</p>
+                    <p className="font-semibold text-gray-900">{tx.customer_name}</p>
+                    <p className="mt-1 text-sm text-gray-500">#${tx.id}</p>
                   </div>
                   <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[tx.status]}`}
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusStyles[tx.order_status]}`}
                   >
-                    {tx.status}
+                    {tx.order_status}
                   </span>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm text-gray-700">
                   <p>
                     <span className="font-medium text-gray-900">Date:</span>{" "}
-                    {tx.date}
+                    {new Date(tx.order_date).toLocaleDateString()}
                   </p>
                   <p>
                     <span className="font-medium text-gray-900">Amount:</span>{" "}
-                    {tx.amount}
+                    {`₹${tx.total_price}`}
                   </p>
                 </div>
               </div>

@@ -81,32 +81,29 @@ const getCookOrders = async(req,res)=>{
         }
 
         const orders = await pool.query(
-  `
-  SELECT
-      orders.id,
-      orders.quantity,
-      orders.total_price,
-      orders.order_status,
-      orders.order_date,
-      orders.delivery_address,
-      orders.special_instructions,
-      users.name AS customer_name,
-      users.email AS customer_email,
-      menus.dish_name,
-      menus.meal_type,
-      menus.price
-  FROM orders
-  INNER JOIN users
-      ON orders.user_id = users.id
-  INNER JOIN menus
-      ON orders.menu_id = menus.id
-  WHERE orders.cook_id = $1
-  ORDER BY orders.order_date DESC
-  `,
-  [cook.rows[0].id]
-);
+            `SELECT
+            orders.id,
+            orders.quantity,
+            orders.total_price,
+            orders.order_status,
+            orders.order_date,
+            orders.delivery_address,
+            orders.special_instructions,
+            users.name AS customer_name,
+            users.email AS customer_email,
+            menus.dish_name,
+            menus.meal_type,
+            menus.price
+            FROM orders
+            INNER JOIN users
+            ON orders.user_id = users.id
+            INNER JOIN menus
+            ON orders.menu_id = menus.id
+            WHERE orders.cook_id = $1
+            ORDER BY orders.order_date DESC`,
+            [cook.rows[0].id]
+        );
         res.status(200).json(orders.rows);
-
     }catch(error){
         console.log(error);
         res.status(500).json({
@@ -208,10 +205,83 @@ const cancelOrder = async (req, res) => {
         });
     }
 };
+const getCookEarnings = async(req,res)=>{
+    try{
+      const userId = req.user.userId;
+      const cook = await pool.query(
+        `SELECT * FROM cooks
+        WHERE user_id = $1`,[userId]
+      );
+      if(cook.rows.length === 0){
+        return res.status(400).json({
+            success:false,
+            message:"Cook Not Found"
+        });
+      }
+      const cookId = cook.rows[0].id;
+      const today = await pool.query(
+        `SELECT COALESCE(SUM(total_price),0) AS total
+        FROM orders
+        WHERE cook_id = $1
+        AND order_status = 'Delivered'
+        AND DATE(order_date) = CURRENT_DATE`,[cookId]
+      );
+      const weekly = await pool.query(
+        `SELECT COALESCE(SUM(total_price),0) AS total
+        FROM orders
+        WHERE cook_id = $1
+        AND order_status = 'Delivered'
+        AND order_date >= CURRENT_DATE - INTERVAL '7 days'`,[cookId]
+      );
+      const monthly = await pool.query(
+        `SELECT COALESCE(SUM(total_price),0) AS total
+        FROM orders
+        WHERE cook_id = $1
+        AND order_status = 'Delivered'
+        AND DATE_TRUNC('month',order_date) = DATE_TRUNC('month',CURRENT_DATE)`,[cookId]
+      );
+      const lifetime = await pool.query(
+        `SELECT COALESCE(SUM(total_price),0) AS total
+        FROM orders
+        WHERE cook_id = $1
+        AND order_status = 'Delivered'`,[cookId]
+      );
+      const transactions = await pool.query(
+        `SELECT 
+        orders.id,
+        orders.order_date,
+        orders.total_price,
+        orders.order_status,
+        users.name AS customer_name
+        FROM orders
+        JOIN users 
+        ON orders.user_id = users.id
+        WHERE orders.cook_id = $1
+        ORDER BY orders.order_date DESC`,[cookId]
+      );
+      res.status(200).json({
+        success:true,
+        summary:{
+            today:today.rows[0].total,
+            weekly:weekly.rows[0].total,
+            monthly:monthly.rows[0].total,
+            lifetime:lifetime.rows[0].total
+        },
+        transactions:transactions.rows
+    });
+    }catch(error){
+        console.log(error);
+        return res.status(500).json({
+            sucess:false,
+            message:"Server Error"
+        });
+    }
+};
 module.exports = {
     placeOrder,
     getMyOrders,
     getCookOrders,
     updateOrderStatus,
-    cancelOrder
+    cancelOrder,
+    getCookEarnings
 };
