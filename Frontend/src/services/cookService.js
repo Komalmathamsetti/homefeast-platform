@@ -9,4 +9,8 @@ export const getCookProfile = async()=>{
 };
 export const updateCookProfile = async(profileData)=>{
   return API.put("/cooks/profile",profileData);
+};
+export const getCookDashboard = async()=>{
+  const response = await API.get("/cook-dashboard");
+  return response.data;
 }

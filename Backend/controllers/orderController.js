@@ -147,13 +147,25 @@ const updateOrderStatus = async (req, res) => {
                 message:"Invalid Status"
             });
         }
-        const updatedOrder = await pool.query(
-            `UPDATE orders
-             SET order_status = $1
-             WHERE id = $2
-             RETURNING *`,
-            [status, orderId]
-        );
+        let updatedOrder;
+        if (status === "Delivered") {
+            updatedOrder = await pool.query(
+                `UPDATE orders
+                SET order_status = $1,
+                delivered_at = CURRENT_TIMESTAMP
+                WHERE id = $2
+                RETURNING *`,
+                [status, orderId]
+            );
+        } else {
+            updatedOrder = await pool.query(
+                `UPDATE orders
+                SET order_status = $1
+                WHERE id = $2
+                RETURNING *`,
+                [status, orderId]
+            );
+}
         res.status(200).json({
             message: "Order updated",
             order: updatedOrder.rows[0]
@@ -223,22 +235,22 @@ const getCookEarnings = async(req,res)=>{
         `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
-        AND order_status = 'Delivered'
-        AND DATE(order_date) = CURRENT_DATE`,[cookId]
+        AND order_status='Delivered'
+        AND DATE(delivered_at)=CURRENT_DATE`,[cookId]
       );
       const weekly = await pool.query(
         `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
         AND order_status = 'Delivered'
-        AND order_date >= CURRENT_DATE - INTERVAL '7 days'`,[cookId]
+        AND delivered_at >= CURRENT_DATE - INTERVAL '7 days'`,[cookId]
       );
       const monthly = await pool.query(
         `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
         AND order_status = 'Delivered'
-        AND DATE_TRUNC('month',order_date) = DATE_TRUNC('month',CURRENT_DATE)`,[cookId]
+        AND DATE_TRUNC('month',delivered_at) = DATE_TRUNC('month',CURRENT_DATE)`,[cookId]
       );
       const lifetime = await pool.query(
         `SELECT COALESCE(SUM(total_price),0) AS total
@@ -249,7 +261,7 @@ const getCookEarnings = async(req,res)=>{
       const transactions = await pool.query(
         `SELECT 
         orders.id,
-        orders.order_date,
+        orders.delivered_at,
         orders.total_price,
         orders.order_status,
         users.name AS customer_name
@@ -257,7 +269,7 @@ const getCookEarnings = async(req,res)=>{
         JOIN users 
         ON orders.user_id = users.id
         WHERE orders.cook_id = $1
-        ORDER BY orders.order_date DESC`,[cookId]
+        ORDER BY orders.delivered_at DESC NULLS LAST`,[cookId]
       );
       res.status(200).json({
         success:true,
@@ -272,7 +284,7 @@ const getCookEarnings = async(req,res)=>{
     }catch(error){
         console.log(error);
         return res.status(500).json({
-            sucess:false,
+            success:false,
             message:"Server Error"
         });
     }

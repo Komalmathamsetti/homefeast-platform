@@ -6,6 +6,8 @@ import CookOrders from "./CookOrders";
 import CookProfile from "./CookProfile";
 import CookSubscriptions from "./CookSubscriptions";
 import AddMealForm from "./MealForm";
+import CookHome from "./CookHome";
+import { getCookDashboard } from "../../services/cookService";
 import Swal from "sweetalert2";
 const NAV = [
   { label: "Home", icon: "🏠" },
@@ -23,10 +25,25 @@ export default function CookDashboard() {
   const [refreshMenu,setRefreshMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading,setLoading] = useState(true);
+  const [dashboard,setDashboard] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const renderPage = () => {
   switch (active) {
+   case "Dashboard":
+    if (!dashboard) {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                Loading Dashboard...
+            </div>
+        );
+    }
+    return (
+        <CookHome
+            dashboard={dashboard}
+            setActive={setActive}
+        />
+    );
     case "Profile":
       return <CookProfile />;
     case "My Menu":
@@ -88,11 +105,19 @@ export default function CookDashboard() {
     navigate("/");
   };
   useEffect(() => {
-    const loadData = async () => {
-        // fetch profile/dashboard
-        setLoading(false);
+    const loadDashboard = async () => {
+        try{
+          const response=await getCookDashboard();
+          setDashboard(response);
+        }
+        catch(error){
+          console.log(error);
+        }
+        finally{
+          setLoading(false);
+        }
     };
-    loadData();
+    loadDashboard();
   }, []);
   if(loading){
     return(
