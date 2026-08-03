@@ -17,13 +17,15 @@ const getCookDashboard = async(req,res)=>{
     const totalOrders = await pool.query(
         `SELECT COUNT(*) AS total_orders
         FROM orders
-        WHERE cook_id = $1`,[cookId]
+        WHERE cook_id=$1
+        AND DATE(order_date)=CURRENT_DATE`,[cookId]
     );
     const earnings = await pool.query(
-        `SELECT COALESCE(SUM(total_price), 0) AS earnings
+        `SELECT COALESCE(SUM(total_price),0) AS earnings
         FROM orders
-        WHERE cook_id = $1
-        AND order_status = 'Delivered'`,[cookId]
+        WHERE cook_id=$1
+        AND order_status='Delivered'
+        AND DATE(delivered_at)=CURRENT_DATE`,[cookId]
     );
     const meals=await pool.query(
         `SELECT COUNT(*)

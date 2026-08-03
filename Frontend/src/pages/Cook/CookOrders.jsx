@@ -9,7 +9,7 @@ const statusStyles = {
   Cancelled: "bg-gray-100 text-gray-700 ring-1 ring-gray-300",
 };
 
-export default function OrdersManagementPage() {
+export default function OrdersManagementPage({refreshDashboard}) {
   const [orders, setOrders] = useState([]);
   const [loading,setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -48,9 +48,16 @@ export default function OrdersManagementPage() {
   }, []);
   const changeStatus = async(id,status)=>{
     try{
-      await updateOrderStatusAPI(id,status);
-      toast.success("Status Updated");
-      fetchOrders();
+      await updateOrderStatusAPI(id, status);
+    setOrders((prev) =>
+      prev.map((order) =>
+        order.id === id
+          ? { ...order, order_status: status }
+          : order
+      )
+    );
+    await refreshDashboard();
+    toast.success("Status Updated");
     }catch(error){
       toast.error(error.response?.data?.message);
     }

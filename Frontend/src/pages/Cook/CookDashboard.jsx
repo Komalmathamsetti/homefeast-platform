@@ -28,6 +28,23 @@ export default function CookDashboard() {
   const [dashboard,setDashboard] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
+  const loadDashboard = async () => {
+    try{
+      const response=await getCookDashboard();
+      setDashboard(response);
+    }catch(error){
+      console.log(error);
+    }finally{
+      setLoading(false);
+    }
+  };
+  useEffect(()=>{
+    const load = async()=>{
+      await loadDashboard();
+      setLoading(false);
+    };
+    load();
+  },[]);
   const renderPage = () => {
   switch (active) {
    case "Dashboard":
@@ -71,7 +88,8 @@ export default function CookDashboard() {
         />
       );
     case "Orders":
-      return <CookOrders />;
+      return <CookOrders 
+      refreshDashboard = {loadDashboard}/>;
     case "Subscriptions":
       return <CookSubscriptions />;
     case "Earnings":
@@ -104,21 +122,6 @@ export default function CookDashboard() {
     });
     navigate("/");
   };
-  useEffect(() => {
-    const loadDashboard = async () => {
-        try{
-          const response=await getCookDashboard();
-          setDashboard(response);
-        }
-        catch(error){
-          console.log(error);
-        }
-        finally{
-          setLoading(false);
-        }
-    };
-    loadDashboard();
-  }, []);
   if(loading){
     return(
       <div className="flex justify-center items-center h-screen">

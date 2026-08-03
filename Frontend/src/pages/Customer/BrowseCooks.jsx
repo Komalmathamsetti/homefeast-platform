@@ -22,9 +22,6 @@ function CookCard({ cook }) {
             <h3 className="text-lg font-bold text-slate-900">{cook.name}</h3>
             <p className="text-sm text-slate-500">{cook.service_area}</p>
           </div>
-          <div className="rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-600">
-            ₹ {cook.starting_price}
-          </div>
         </div>
         <div className="space-y-2 mb-5">
           <p className="text-gray-700">🍛 {cook.cuisine}</p>

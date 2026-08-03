@@ -65,20 +65,20 @@ const filterCooks = async (req, res) => {
             maxPrice
         } = req.query;
         let query = `
-        SELECT DISTINCT
-            c.id,
-            u.name,
-            c.bio,
-            c.service_area,
-            c.delivery_timings,
-            c.rating,
-            m.price AS starting_price,
-            m.cuisine
+        SELECT
+        c.id,
+        u.name,
+        c.bio,
+        c.service_area,
+        c.delivery_timings,
+        c.rating,
+        MIN(m.price) AS starting_price,
+        MIN(m.cuisine) AS cuisine
         FROM cooks c
         JOIN users u
-            ON c.user_id = u.id
+        ON c.user_id = u.id
         LEFT JOIN menus m
-            ON c.id = m.cook_id
+        ON c.id = m.cook_id
         WHERE 1=1
         `;
         const values = [];
@@ -116,6 +116,14 @@ const filterCooks = async (req, res) => {
             AND m.price <= $${values.length}
             `;
         }
+        query += `
+        GROUP BY
+        c.id,
+        u.name,
+        c.bio,
+        c.service_area,
+        c.delivery_timings,
+        c.rating`;
         const cooks = await pool.query(query, values);
         res.status(200).json(cooks.rows);
     } catch (error) {
