@@ -20,7 +20,7 @@ const CookHome = ({ dashboard,setActive }) => {
     (summary?.orders || 0) > 0 ||
     (summary?.earnings || 0) > 0 ||
     (summary?.meals || 0) > 0 ||
-    (summary?.subscribers || 0) > 0 ||
+    (summary?.subscriptions || 0) > 0 ||
     recentOrders.length > 0 ||
     recentSubscribers.length > 0;
 
@@ -71,7 +71,7 @@ const CookHome = ({ dashboard,setActive }) => {
     },
     {
       label: "Active Subscribers",
-      value: summary?.subscribers ?? 0,
+      value: summary?.subscriptions ?? 0,
       icon: "❤️",
     },
   ];

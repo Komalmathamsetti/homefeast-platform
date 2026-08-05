@@ -1,5 +1,6 @@
 const pool = require("../db");
 const getCookDashboard = async(req,res)=>{
+    console.log(req.user);
     try{
     const userId = req.user.userId;
     const cookResult = await pool.query(
@@ -38,6 +39,8 @@ const getCookDashboard = async(req,res)=>{
         WHERE cook_id=$1
         AND status='Active'`,[cookId]
     );
+    console.log("Cook ID:", cookId);
+    console.log("Subscriber Count:", subscribers.rows);
     const recentOrders=await pool.query(
         `SELECT
         orders.id,

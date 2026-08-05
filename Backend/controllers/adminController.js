@@ -1,161 +1,285 @@
 const pool = require("../db");
-const getAllUsers = async(req,res)=>{
-    try{
-       const users = await pool.query(
-        `SELECT 
-           id,
-           name,
-           email,
-           phone,
-           role,
-           created_at
+const getDashboardStats = async(req,res)=>{
+  try{
+    const totalUsers = await pool.query(
+        `SELECT COUNT(*) AS count FROM users`
+    );
+    const totalCustomers = await pool.query(
+        `SELECT COUNT(*) AS count FROM users
+        WHERE role='customer'`
+    );
+    const totalCooks = await pool.query(
+        `SELECT COUNT(*) AS count
         FROM users
-        ORDER BY created_at DESC`
-       );
-       res.status(200).json(users.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message:"Server Error"});
-    }
+        WHERE role='cook'`
+    );
+    const pendingCooks = await pool.query(
+        `SELECT COUNT(*) AS count
+        FROM users
+        WHERE approved = 'false'`
+    );
+    const ordersToday = await pool.query(
+        `SELECT COUNT(*) AS count
+        FROM orders
+        WHERE DATE(order_date) = CURRENT_DATE`
+    );
+    const revenueToday = await pool.query(
+        `SELECT COALESCE(SUM(total_price),0) AS total
+        FROM orders
+        WHERE order_status = 'Delivered'
+        AND DATE(delivered_at) = CURRENT_DATE`
+    );
+    const activeSubscriptions = await pool.query(`
+      SELECT COUNT(*) AS count
+      FROM subscriptions
+      WHERE status = 'Active'
+    `);
+
+    res.status(200).json({
+      success: true,
+      summary: {
+        totalUsers: Number(totalUsers.rows[0].count),
+        totalCustomers: Number(totalCustomers.rows[0].count),
+        totalCooks: Number(totalCooks.rows[0].count),
+        pendingCooks: Number(pendingCooks.rows[0].count),
+        ordersToday: Number(ordersToday.rows[0].count),
+        revenueToday: Number(revenueToday.rows[0].total),
+        activeSubscriptions: Number(activeSubscriptions.rows[0].count)
+      }
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
 };
-const getAllCooks = async(req,res)=>{
-    try{
-        const cooks = await pool.query(
-            `SELECT 
-                cooks.*,
-                users.name,
-                users.email,
-                users.phone
-            FROM cooks
-            JOIN users 
-            ON cooks.user_id = users.id
-            ORDER BY cooks.id DESC`
-        );
-        res.status(200).json(cooks.rows);
-    }catch(error){
-      console.log(error);
-      res.status(500).json({message:"Server Error"});
-    }
+const getPendingCooks = async (req, res) => {
+  try {
+
+    const cooks = await pool.query(`
+      SELECT
+        cooks.id,
+        users.name,
+        users.email,
+        users.phone,
+        cooks.service_area,
+        cooks.delivery_timings,
+        cooks.bio,
+        cooks.rating,
+        cooks.approved
+      FROM cooks
+      JOIN users
+      ON cooks.user_id = users.id
+      WHERE cooks.approved = false
+      ORDER BY cooks.id DESC
+    `);
+
+    res.status(200).json(cooks.rows);
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
+
+/* ===========================================
+   Approve Cook
+=========================================== */
 const approveCook = async (req, res) => {
-    try {
-        const cookId = req.params.id;
-        const cook = await pool.query(
-            `SELECT *
-             FROM cooks
-             WHERE id = $1`,
-            [cookId]
-        );
-        if (cook.rows.length === 0) {
-            return res.status(404).json({
-                message: "Cook not found"
-            });
-        }
-        const updated = await pool.query(
-            `UPDATE cooks
-             SET approved = true
-             WHERE id = $1
-             RETURNING *`,
-            [cookId]
-        );
-        res.status(200).json({message: "Cook approved successfully",cook: updated.rows[0]});
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({message: "Server Error"});
+  try {
+
+    const { id } = req.params;
+
+    const cook = await pool.query(
+      `SELECT * FROM cooks WHERE id=$1`,
+      [id]
+    );
+
+    if (cook.rows.length === 0) {
+      return res.status(404).json({
+        message: "Cook not found"
+      });
     }
+
+    const updated = await pool.query(
+      `UPDATE cooks
+       SET approved = true
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    res.status(200).json({
+      message: "Cook Approved Successfully",
+      cook: updated.rows[0]
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
-const rejectCook = async(req,res)=>{
-    try{
-        const cookId = req.params.id;
-        const cook = await pool.query(
-            `SELECT *
-             FROM cooks
-             WHERE id = $1`,
-            [cookId]
-        );
-        if (cook.rows.length === 0) {
-            return res.status(404).json({
-                message: "Cook not found"
-            });
-        }
-        const updated = await pool.query(
-            `UPDATE cooks
-             SET approved = false
-             WHERE id = $1
-             RETURNING *`,
-            [cookId]
-        );
-        res.status(200).json({message: "Cook rejected",cook: updated.rows[0]});
-    }catch (error) {
-        console.log(error);
-        res.status(500).json({message: "Server Error"});
+
+/* ===========================================
+   Reject Cook
+=========================================== */
+const rejectCook = async (req, res) => {
+  try {
+
+    const { id } = req.params;
+
+    const cook = await pool.query(
+      `SELECT * FROM cooks WHERE id=$1`,
+      [id]
+    );
+
+    if (cook.rows.length === 0) {
+      return res.status(404).json({
+        message: "Cook not found"
+      });
     }
+
+    await pool.query(
+      `DELETE FROM cooks
+       WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({
+      message: "Cook Rejected Successfully"
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
+
+/* ===========================================
+   Get All Users
+=========================================== */
+const getAllUsers = async (req, res) => {
+  try {
+
+    const users = await pool.query(`
+      SELECT
+        id,
+        name,
+        email,
+        phone,
+        role,
+        created_at
+      FROM users
+      ORDER BY created_at DESC
+    `);
+
+    res.status(200).json(users.rows);
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
+};
+
+/* ===========================================
+   Get All Orders
+=========================================== */
 const getAllOrders = async (req, res) => {
-    try {
-        const orders = await pool.query(
-            `SELECT
-                orders.*,
-                users.name AS customer_name
-             FROM orders
-             JOIN users
-             ON orders.user_id = users.id
-             ORDER BY orders.order_date DESC`
-        );
-        res.status(200).json(orders.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message: "Server Error"});
-    }
+  try {
+
+    const orders = await pool.query(`
+      SELECT
+        orders.id,
+        customer.name AS customer_name,
+        cookUser.name AS cook_name,
+        menus.dish_name,
+        orders.quantity,
+        orders.total_price,
+        orders.order_status,
+        orders.order_date
+      FROM orders
+
+      JOIN users customer
+      ON orders.user_id = customer.id
+
+      JOIN cooks
+      ON orders.cook_id = cooks.id
+
+      JOIN users cookUser
+      ON cooks.user_id = cookUser.id
+
+      JOIN menus
+      ON orders.menu_id = menus.id
+
+      ORDER BY orders.order_date DESC
+    `);
+
+    res.status(200).json(orders.rows);
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
+
+/* ===========================================
+   Get All Subscriptions
+=========================================== */
 const getAllSubscriptions = async (req, res) => {
-    try {
-        const subscriptions = await pool.query(
-            `SELECT
-                subscriptions.*,
-                users.name
-             FROM subscriptions
-             JOIN users
-             ON subscriptions.user_id = users.id
-             ORDER BY subscriptions.created_at DESC`
-        );
-        res.status(200).json(subscriptions.rows);
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({message: "Server Error"});
-    }
+  try {
+
+    const subscriptions = await pool.query(`
+      SELECT
+        subscriptions.id,
+        customer.name AS customer_name,
+        cookUser.name AS cook_name,
+        subscriptions.plan_type,
+        subscriptions.status,
+        subscriptions.start_date,
+        subscriptions.end_date
+      FROM subscriptions
+
+      JOIN users customer
+      ON subscriptions.user_id = customer.id
+
+      JOIN cooks
+      ON subscriptions.cook_id = cooks.id
+
+      JOIN users cookUser
+      ON cooks.user_id = cookUser.id
+
+      ORDER BY subscriptions.start_date DESC
+    `);
+
+    res.status(200).json(subscriptions.rows);
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error"
+    });
+  }
 };
-const dashboardStats = async (req, res) => {
-    try {
-        const users = await pool.query(
-            "SELECT COUNT(*) FROM users"
-        );
-        const cooks = await pool.query(
-            "SELECT COUNT(*) FROM cooks"
-        );
-        const orders = await pool.query(
-            "SELECT COUNT(*) FROM orders"
-        );
-        const subscriptions = await pool.query(
-            "SELECT COUNT(*) FROM subscriptions"
-        );
-        res.status(200).json({
-            totalUsers: users.rows[0].count,
-            totalCooks: cooks.rows[0].count,
-            totalOrders: orders.rows[0].count,
-            totalSubscriptions: subscriptions.rows[0].count
-        });
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message: "Server Error"});
-    }
-};
+
 module.exports = {
-    getAllUsers,
-    getAllCooks,
-    approveCook,
-    rejectCook,
-    getAllOrders,
-    getAllSubscriptions,
-    dashboardStats
+  getDashboardStats,
+  getPendingCooks,
+  approveCook,
+  rejectCook,
+  getAllUsers,
+  getAllOrders,
+  getAllSubscriptions
 };

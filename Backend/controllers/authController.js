@@ -11,7 +11,7 @@ const register = async (req, res) => {
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await pool.query(
-            `INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5)`,
+            `INSERT INTO users (name, email, password, phone, role) VALUES ($1, $2, $3, $4, $5) RETURNING*`,
             [name, email, hashedPassword, phone, role]
         );
         const userId = newUser.rows[0].id;
@@ -23,7 +23,7 @@ const register = async (req, res) => {
         }
         if(role === 'cook'){
             await pool.query(
-                `INSERT INTO cooks (user_id,bio,service_area,delivery_timings,approved,rating,earnings) VALUES ($1,"","","",false,0,0) RETURNING *`,
+                `INSERT INTO cooks (user_id,bio,service_area,delivery_timings,approved,rating,earnings) VALUES ($1,'','','',false,0,0) RETURNING *`,
                 [userId]
             );
         }
