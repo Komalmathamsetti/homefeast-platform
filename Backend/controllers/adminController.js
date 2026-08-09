@@ -15,7 +15,7 @@ const getDashboardStats = async(req,res)=>{
     );
     const pendingCooks = await pool.query(
         `SELECT COUNT(*) AS count
-        FROM users
+        FROM cooks
         WHERE approved = 'false'`
     );
     const ordersToday = await pool.query(

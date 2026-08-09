@@ -1,215 +1,427 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import toast from "react-hot-toast";
+import {
+  getAdminDashboard,
+} from "../../services/adminServices";
 
 const NAV = [
   { label: "Dashboard", icon: "📊" },
-  { label: "Profile", icon: "👤" },
+  { label: "Users & Cooks", icon: "👥" },
+  { label: "Cook Approvals", icon: "👨‍🍳" },
+  { label: "Orders", icon: "🛒" },
+  { label: "Subscriptions", icon: "📋" },
+  { label: "Categories & Cuisines", icon: "🍱" },
+  { label: "Complaints & Disputes", icon: "⚠️" },
   { label: "Logout", icon: "🚪" },
 ];
 
-const stats = [
-  { label: "Total Users", value: "1,240", color: "bg-indigo-100 text-indigo-600" },
-  { label: "Active Cooks", value: "84", color: "bg-orange-100 text-orange-600" },
-  { label: "Orders Today", value: "310", color: "bg-green-100 text-green-600" },
-  { label: "Revenue Today", value: "$4,820", color: "bg-purple-100 text-purple-600" },
+const statCards = [
+  {
+    key: "totalUsers",
+    label: "Total Users",
+    icon: "👥",
+  },
+  {
+    key: "totalCustomers",
+    label: "Total Customers",
+    icon: "🧑",
+  },
+  {
+    key: "totalCooks",
+    label: "Total Cooks",
+    icon: "👨‍🍳",
+  },
+  {
+    key: "pendingCooks",
+    label: "Pending Cooks",
+    icon: "⏳",
+  },
+  {
+    key: "ordersToday",
+    label: "Orders Today",
+    icon: "🛒",
+  },
+  {
+    key: "revenueToday",
+    label: "Revenue Today",
+    icon: "💰",
+    money: true,
+  },
+  {
+    key: "activeSubscriptions",
+    label: "Active Subscriptions",
+    icon: "❤️",
+  },
 ];
-
-const users = [
-  { name: "Jane Doe", email: "jane@example.com", role: "Customer", status: "Active", joined: "Jun 10" },
-  { name: "Maria Garcia", email: "maria@example.com", role: "Cook", status: "Active", joined: "Mar 5" },
-  { name: "Tom Richards", email: "tom@example.com", role: "Cook", status: "Suspended", joined: "Jan 22" },
-  { name: "Sara Kim", email: "sara@example.com", role: "Customer", status: "Active", joined: "Jun 15" },
-  { name: "Chris Turner", email: "chris@example.com", role: "Customer", status: "Inactive", joined: "Apr 1" },
-];
-
-const roleColor = {
-  Customer: "bg-blue-100 text-blue-700",
-  Cook: "bg-orange-100 text-orange-700",
-};
-
-const statusColor = {
-  Active: "bg-green-100 text-green-700",
-  Suspended: "bg-red-100 text-red-700",
-  Inactive: "bg-gray-100 text-gray-500",
-};
-
 export default function AdminDashboard() {
   const [active, setActive] = useState("Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user"));
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      const response = await getAdminDashboard();
+      console.log("ADMIN DASHBOARD:", response);
+      setSummary(response.summary);
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to load admin dashboard"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    const fetchDashboard = async()=>{
+      await loadDashboard();
+    };
+    fetchDashboard();
+  }, []);
+  const handleNavigation = (label) => {
+    setSidebarOpen(false);
 
+    if (label === "Logout") {
+      setActive("Logout");
+      return;
+    }
+
+    setActive(label);
+  };
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Are you sure you want to logout?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Logout",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#f97316",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) {
+      return;
+    }
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    await Swal.fire({
+      title: "Logged Out!",
+      text: "You have been logged out successfully.",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    navigate("/");
+  };
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-amber-50">
+        <h1 className="text-3xl font-bold text-orange-500">
+          Loading Admin Dashboard...
+        </h1>
+      </div>
+    );
+  }
   return (
-    <div className="flex h-screen bg-slate-100 font-sans overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-amber-50 font-sans">
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/30 z-20 md:hidden"
+          className="fixed inset-0 z-20 bg-black/30 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
       {/* Sidebar */}
       <aside
-        className={`fixed md:static z-30 top-0 left-0 h-full w-64 bg-gray-900 text-white flex flex-col transition-transform duration-300
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`fixed left-0 top-0 z-30 flex h-full w-64 flex-col bg-gray-900 text-white shadow-lg transition-transform duration-300
+        ${
+          sidebarOpen
+            ? "translate-x-0"
+            : "-translate-x-full"
+        }
+        md:static md:translate-x-0`}
       >
-        <div className="px-6 py-6 border-b border-white/10">
-          <h1 className="text-2xl font-bold text-orange-400">HomeFeast</h1>
-          <p className="text-xs text-gray-400 mt-1">Admin Panel</p>
+        {/* Logo */}
+        <div className="border-b border-white/10 px-6 py-6">
+          <h1 className="text-2xl font-bold text-orange-400">
+            HomeFeast
+          </h1>
+          <p className="mt-1 text-xs text-gray-400">
+            Admin Panel
+          </p>
         </div>
-
-        <nav className="flex-1 px-4 py-6 space-y-1">
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-6">
           {NAV.map(({ label, icon }) => (
             <button
               key={label}
-              onClick={() => { setActive(label); setSidebarOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
-                ${active === label
+              onClick={() => handleNavigation(label)}
+              className={`flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition
+              ${
+                active === label
                   ? "bg-orange-500 text-white"
-                  : "text-gray-400 hover:bg-white/10 hover:text-white"}`}
+                  : "text-gray-400 hover:bg-white/10 hover:text-white"
+              }`}
             >
-              <span className="text-lg">{icon}</span>
+              <span className="text-lg">
+                {icon}
+              </span>
               {label}
             </button>
           ))}
         </nav>
-
-        <div className="px-6 py-4 border-t border-white/10">
+        {/* Admin */}
+        <div className="border-t border-white/10 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">AD</div>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+              {user?.name
+                ? user.name.charAt(0).toUpperCase()
+                : "A"}
+            </div>
             <div>
-              <p className="text-sm font-semibold text-white">Admin User</p>
-              <p className="text-xs text-gray-400">Super Admin</p>
+              <p className="text-sm font-semibold text-white">
+                {user?.name || "Admin"}
+              </p>
+              <p className="text-xs text-gray-400">
+                Administrator
+              </p>
             </div>
           </div>
         </div>
       </aside>
-
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
           <button
-            className="md:hidden text-gray-500 hover:text-orange-500"
+            className="text-gray-500 hover:text-orange-500 md:hidden"
             onClick={() => setSidebarOpen(true)}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
-          <h2 className="text-lg font-semibold text-gray-800">{active}</h2>
+          <h2 className="text-lg font-semibold text-gray-800">
+            {active}
+          </h2>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400 hidden sm:block">Admin Panel</span>
-            <span className="w-2 h-2 rounded-full bg-green-500 inline-block" title="System operational" />
+            <span className="hidden text-sm text-gray-400 sm:block">
+              Welcome Back, {user?.name || "Admin"}
+            </span>
+            <span
+              className="h-2 w-2 rounded-full bg-green-500"
+              title="System operational"
+            />
           </div>
         </header>
-
+        {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">
+          {/* ================= DASHBOARD ================= */}
           {active === "Dashboard" && (
-            <>
-              {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {stats.map((s) => (
-                  <div key={s.label} className={`rounded-xl p-5 bg-white shadow-sm border border-gray-100 ${s.color}`}>
-                    <p className="text-2xl font-bold">{s.value}</p>
-                    <p className="text-xs mt-1 font-medium opacity-80">{s.label}</p>
+            <div className="space-y-6">
+              {/* Heading */}
+              <div>
+                <h1 className="text-3xl font-bold text-orange-600">
+                  Admin Dashboard
+                </h1>
+                <p className="mt-2 text-sm text-gray-600">
+                  Manage and monitor the HomeFeast platform.
+                </p>
+              </div>
+              {/* Statistics */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {statCards.map((card) => {
+                  const value = summary?.[card.key] ?? 0;
+                  return (
+                    <div
+                      key={card.key}
+                      className="rounded-3xl border border-orange-100 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">
+                            {card.label}
+                          </p>
+                          <h2 className="mt-3 text-3xl font-bold text-gray-900">
+                            {card.money
+                              ? `₹${Number(value).toLocaleString(
+                                  "en-IN"
+                                )}`
+                              : Number(value).toLocaleString(
+                                  "en-IN"
+                                )}
+                          </h2>
+                        </div>
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-2xl">
+                          {card.icon}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Admin Features */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="rounded-3xl border border-orange-100 bg-white p-6 shadow-sm">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Admin Features
+                  </h2>
+                  <div className="mt-5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <span>👥</span>
+                      <span className="text-gray-600">
+                        Manage users and cooks
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>👨‍🍳</span>
+                      <span className="text-gray-600">
+                        Approve cook registrations
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>🛒</span>
+                      <span className="text-gray-600">
+                        Monitor orders and subscriptions
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>🍱</span>
+                      <span className="text-gray-600">
+                        Manage categories and cuisines
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>⚠️</span>
+                      <span className="text-gray-600">
+                        Handle complaints and disputes
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-
-              {/* User Management */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800">User Management</h3>
-                  <button className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg font-medium transition">
-                    + Add User
-                  </button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-gray-400 border-b border-gray-100">
-                        <th className="px-6 py-3 font-medium">Name</th>
-                        <th className="px-6 py-3 font-medium">Email</th>
-                        <th className="px-6 py-3 font-medium">Role</th>
-                        <th className="px-6 py-3 font-medium">Status</th>
-                        <th className="px-6 py-3 font-medium">Joined</th>
-                        <th className="px-6 py-3 font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((u) => (
-                        <tr key={u.email} className="border-b border-gray-50 hover:bg-slate-50 transition">
-                          <td className="px-6 py-3 font-medium text-gray-800">{u.name}</td>
-                          <td className="px-6 py-3 text-gray-500">{u.email}</td>
-                          <td className="px-6 py-3">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${roleColor[u.role]}`}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3">
-                            <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor[u.status]}`}>
-                              {u.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3 text-gray-400">{u.joined}</td>
-                          <td className="px-6 py-3 flex gap-3">
-                            <button className="text-xs text-indigo-600 hover:underline font-medium">Edit</button>
-                            <button className="text-xs text-red-500 hover:underline font-medium">
-                              {u.status === "Suspended" ? "Restore" : "Suspend"}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </>
-          )}
-
-          {active === "Profile" && (
-            <div className="max-w-lg bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-2xl">AD</div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800">Admin User</h3>
-                  <p className="text-sm text-gray-400">Super Admin</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {[
-                  ["Email", "admin@homefeast.com"],
-                  ["Phone", "+1 555 999 0000"],
-                  ["Role", "Super Admin"],
-                  ["Last Login", "Jun 27, 2026 – 10:14 AM"],
-                ].map(([label, val]) => (
-                  <div key={label} className="flex justify-between border-b border-gray-100 pb-3">
-                    <span className="text-sm text-gray-500">{label}</span>
-                    <span className="text-sm font-medium text-gray-800">{val}</span>
+                {/* Today's Overview */}
+                <div className="rounded-3xl border border-orange-100 bg-white p-6 shadow-sm">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Today's Overview
+                  </h2>
+                  <div className="mt-5 space-y-4">
+                    <div className="flex justify-between border-b border-gray-100 pb-4">
+                      <span className="text-gray-600">
+                        Orders Today
+                      </span>
+                      <span className="font-semibold">
+                        {summary?.ordersToday ?? 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-100 pb-4">
+                      <span className="text-gray-600">
+                        Revenue Today
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        ₹
+                        {Number(
+                          summary?.revenueToday ?? 0
+                        ).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-100 pb-4">
+                      <span className="text-gray-600">
+                        Pending Cook Registrations
+                      </span>
+                      <span className="font-semibold text-orange-600">
+                        {summary?.pendingCooks ?? 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">
+                        Active Subscriptions
+                      </span>
+                      <span className="font-semibold">
+                        {summary?.activeSubscriptions ?? 0}
+                      </span>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
-              <button className="mt-6 w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-lg text-sm font-semibold transition">
-                Edit Profile
-              </button>
             </div>
           )}
+          {/* ================= PLACEHOLDER PAGES ================= */}
+          {active !== "Dashboard" &&
+            active !== "Logout" && (
+              <div className="flex min-h-125 items-center justify-center">
 
+                <div className="rounded-3xl border border-orange-100 bg-white p-10 text-center shadow-sm">
+
+                  <div className="text-5xl">
+                    🚧
+                  </div>
+
+                  <h2 className="mt-4 text-xl font-bold text-gray-900">
+                    {active}
+                  </h2>
+
+                  <p className="mt-2 text-sm text-gray-500">
+                    This section will be built next.
+                  </p>
+
+                </div>
+
+              </div>
+            )}
+          {/* ================= LOGOUT ================= */}
           {active === "Logout" && (
-            <div className="flex items-center justify-center h-full">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center max-w-sm w-full">
-                <p className="text-4xl mb-4">🔒</p>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">End Admin Session?</h3>
-                <p className="text-sm text-gray-400 mb-6">You're about to log out of the HomeFeast admin panel.</p>
-                <button className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition">
+            <div className="flex h-full items-center justify-center">
+
+              <div className="w-full max-w-sm rounded-3xl border border-gray-100 bg-white p-10 text-center shadow-sm">
+
+                <p className="mb-4 text-4xl">
+                  🔒
+                </p>
+
+                <h3 className="mb-2 text-xl font-bold text-gray-800">
+                  End Admin Session?
+                </h3>
+
+                <p className="mb-6 text-sm text-gray-400">
+                  You're about to log out of the HomeFeast admin panel.
+                </p>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
+                >
                   Confirm Logout
                 </button>
+
                 <button
                   onClick={() => setActive("Dashboard")}
-                  className="mt-3 w-full text-sm text-gray-400 hover:text-orange-500 transition"
+                  className="mt-3 w-full text-sm text-gray-400 transition hover:text-orange-500"
                 >
                   Go back
                 </button>
+
               </div>
+
             </div>
           )}
+
         </main>
       </div>
     </div>
