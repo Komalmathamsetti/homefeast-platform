@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import {
   getAdminDashboard,
 } from "../../services/adminServices";
+import CookApprovals from "./CookApproval";
 
 const NAV = [
   { label: "Dashboard", icon: "📊" },
@@ -363,26 +364,17 @@ export default function AdminDashboard() {
             </div>
           )}
           {/* ================= PLACEHOLDER PAGES ================= */}
-          {active !== "Dashboard" &&
+          {active === "Cook Approvals" && (
+            <CookApprovals onCookAction={loadDashboard}/>)}
+            {/* ================= OTHER PAGES ================= */}
+            {active !== "Dashboard" &&active !== "Cook Approvals" &&
             active !== "Logout" && (
-              <div className="flex min-h-125 items-center justify-center">
-
-                <div className="rounded-3xl border border-orange-100 bg-white p-10 text-center shadow-sm">
-
-                  <div className="text-5xl">
-                    🚧
-                  </div>
-
-                  <h2 className="mt-4 text-xl font-bold text-gray-900">
-                    {active}
-                  </h2>
-
-                  <p className="mt-2 text-sm text-gray-500">
-                    This section will be built next.
-                  </p>
-
+            <div className="flex min-h-125 items-center justify-center">
+              <div className="rounded-3xl border border-orange-100 bg-white p-10 text-center shadow-sm">
+                 <div className="text-5xl">🚧</div>
+                 <h2 className="mt-4 text-xl font-bold text-gray-900">{active}</h2>
+                 <p className="mt-2 text-sm text-gray-500">This section will be built next.</p>
                 </div>
-
               </div>
             )}
           {/* ================= LOGOUT ================= */}

@@ -10,13 +10,12 @@ const getDashboardStats = async(req,res)=>{
     );
     const totalCooks = await pool.query(
         `SELECT COUNT(*) AS count
-        FROM users
-        WHERE role='cook'`
+        FROM cooks`
     );
     const pendingCooks = await pool.query(
         `SELECT COUNT(*) AS count
         FROM cooks
-        WHERE approved = 'false'`
+        WHERE approved = false`
     );
     const ordersToday = await pool.query(
         `SELECT COUNT(*) AS count
@@ -77,7 +76,7 @@ const getPendingCooks = async (req, res) => {
       ORDER BY cooks.id DESC
     `);
 
-    res.status(200).json(cooks.rows);
+    res.status(200).json({success:true,cooks:cooks.rows});
 
   } catch (error) {
     console.log(error);
@@ -92,20 +91,27 @@ const getPendingCooks = async (req, res) => {
 =========================================== */
 const approveCook = async (req, res) => {
   try {
-
     const { id } = req.params;
 
     const cook = await pool.query(
-      `SELECT * FROM cooks WHERE id=$1`,
+      `SELECT *
+       FROM cooks
+       WHERE id = $1`,
       [id]
     );
 
     if (cook.rows.length === 0) {
       return res.status(404).json({
+        success: false,
         message: "Cook not found"
       });
     }
-
+    if (cook.rows[0].approved === true) {
+      return res.status(400).json({
+        success: false,
+        message: "Cook is already approved"
+      });
+    }
     const updated = await pool.query(
       `UPDATE cooks
        SET approved = true
@@ -113,15 +119,17 @@ const approveCook = async (req, res) => {
        RETURNING *`,
       [id]
     );
-
     res.status(200).json({
-      message: "Cook Approved Successfully",
+      success: true,
+      message: "Cook approved successfully",
       cook: updated.rows[0]
     });
 
   } catch (error) {
-    console.log(error);
+    console.log("Approve Cook Error:", error);
+
     res.status(500).json({
+      success: false,
       message: "Server Error"
     });
   }
@@ -132,33 +140,38 @@ const approveCook = async (req, res) => {
 =========================================== */
 const rejectCook = async (req, res) => {
   try {
-
     const { id } = req.params;
-
     const cook = await pool.query(
-      `SELECT * FROM cooks WHERE id=$1`,
+      `SELECT *
+       FROM cooks
+       WHERE id = $1`,
       [id]
     );
-
     if (cook.rows.length === 0) {
       return res.status(404).json({
+        success: false,
         message: "Cook not found"
       });
     }
-
+    if (cook.rows[0].approved === true) {
+      return res.status(400).json({
+        success: false,
+        message: "Approved cook cannot be rejected"
+      });
+    }
     await pool.query(
       `DELETE FROM cooks
        WHERE id = $1`,
       [id]
     );
-
     res.status(200).json({
-      message: "Cook Rejected Successfully"
+      success: true,
+      message: "Cook rejected successfully"
     });
-
   } catch (error) {
-    console.log(error);
+    console.log("Reject Cook Error:", error);
     res.status(500).json({
+      success: false,
       message: "Server Error"
     });
   }
