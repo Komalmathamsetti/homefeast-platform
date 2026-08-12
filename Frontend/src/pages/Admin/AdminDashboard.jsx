@@ -6,6 +6,9 @@ import {
   getAdminDashboard,
 } from "../../services/adminServices";
 import CookApprovals from "./CookApproval";
+import UsersCooks from "./UsersCooks";
+import AdminOrders from "./AdminOrders";
+import AdminSubscriptions from "./AdminSubscriptions";
 
 const NAV = [
   { label: "Dashboard", icon: "📊" },
@@ -366,9 +369,18 @@ export default function AdminDashboard() {
           {/* ================= PLACEHOLDER PAGES ================= */}
           {active === "Cook Approvals" && (
             <CookApprovals onCookAction={loadDashboard}/>)}
+          {active === "Users & Cooks" && (
+            <UsersCooks/>
+          )}
+          {active === "Orders" && (
+            <AdminOrders/>
+          )}
+          {active === "Subscriptions" && (
+            <AdminSubscriptions/>
+          )}
             {/* ================= OTHER PAGES ================= */}
             {active !== "Dashboard" &&active !== "Cook Approvals" &&
-            active !== "Logout" && (
+            active !== "Logout"  && active !== "Users & Cooks" && active !== "Orders" && active !== "Subscriptions" && (
             <div className="flex min-h-125 items-center justify-center">
               <div className="rounded-3xl border border-orange-100 bg-white p-10 text-center shadow-sm">
                  <div className="text-5xl">🚧</div>

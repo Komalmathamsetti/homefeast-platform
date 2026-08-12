@@ -182,24 +182,32 @@ const rejectCook = async (req, res) => {
 =========================================== */
 const getAllUsers = async (req, res) => {
   try {
-
     const users = await pool.query(`
       SELECT
-        id,
-        name,
-        email,
-        phone,
-        role,
-        created_at
+        users.id,
+        users.name,
+        users.email,
+        users.phone,
+        users.role,
+        users.created_at,
+        cooks.id AS cook_id,
+        cooks.approved AS cook_approved
       FROM users
-      ORDER BY created_at DESC
+      LEFT JOIN cooks
+        ON users.id = cooks.user_id
+      ORDER BY users.created_at DESC
     `);
 
-    res.status(200).json(users.rows);
+    res.status(200).json({
+      success: true,
+      users: users.rows
+    });
 
   } catch (error) {
-    console.log(error);
+    console.log("Get Users Error:", error);
+
     res.status(500).json({
+      success: false,
       message: "Server Error"
     });
   }
@@ -253,7 +261,6 @@ const getAllOrders = async (req, res) => {
 =========================================== */
 const getAllSubscriptions = async (req, res) => {
   try {
-
     const subscriptions = await pool.query(`
       SELECT
         subscriptions.id,
@@ -261,10 +268,8 @@ const getAllSubscriptions = async (req, res) => {
         cookUser.name AS cook_name,
         subscriptions.plan_type,
         subscriptions.status,
-        subscriptions.start_date,
-        subscriptions.end_date
+        subscriptions.start_date
       FROM subscriptions
-
       JOIN users customer
       ON subscriptions.user_id = customer.id
 
@@ -276,12 +281,14 @@ const getAllSubscriptions = async (req, res) => {
 
       ORDER BY subscriptions.start_date DESC
     `);
-
-    res.status(200).json(subscriptions.rows);
-
+    res.status(200).json({
+      success: true,
+      subscriptions: subscriptions.rows
+    });
   } catch (error) {
-    console.log(error);
+    console.log("Get All Subscriptions Error:", error);
     res.status(500).json({
+      success: false,
       message: "Server Error"
     });
   }

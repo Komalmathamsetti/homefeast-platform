@@ -11,7 +11,10 @@ import CookDetails from "./pages/Customer/CookDetails";
 import OrderPage from "./pages/Customer/OrderDetails"
 import MyOrders from "./pages/Customer/MyOrders";
 import MySubscriptionsPage from "./pages/Customer/MySubscriptions";
+import UsersCooks from "./pages/Admin/UsersCooks";
+import AdminOrders from "./pages/Admin/AdminOrders";
 import {Toaster} from "react-hot-toast";
+import AdminSubscriptions from "./pages/Admin/AdminSubscriptions";
 function App(){
   return(
     <>
@@ -69,6 +72,12 @@ function App(){
         path="/browse-cooks"
         element={<BrowseCooks/>}
       />
+      <Route path="/users-cooks"
+      element={<UsersCooks/>}/>
+      <Route path="/admin-orders"
+      element={<AdminOrders/>}/>
+      <Route path="/admin-subscriptions"
+      element={<AdminSubscriptions/>}/>
     </Routes>
     </>
   )
