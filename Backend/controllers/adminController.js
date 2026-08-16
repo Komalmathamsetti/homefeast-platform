@@ -293,7 +293,171 @@ const getAllSubscriptions = async (req, res) => {
     });
   }
 };
+const getAllCuisines = async (req, res) => {
+  try {
+    const cuisines = await pool.query(`
+      SELECT
+        cuisine,
+        COUNT(*) AS meals
+      FROM menus
+      WHERE cuisine IS NOT NULL
+        AND TRIM(cuisine) <> ''
+      GROUP BY cuisine
+      ORDER BY cuisine ASC
+    `);
+    res.status(200).json({
+      success: true,
+      cuisines: cuisines.rows
+    });
+  } catch (error) {
+    console.log("Get All Cuisines Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+const getAllCategories = async (req, res) => {
+  try {
+    const categories = await pool.query(`
+      SELECT
+        meal_type AS category,
+        COUNT(*) AS meals
+      FROM menus
+      WHERE meal_type IS NOT NULL
+        AND TRIM(meal_type) <> ''
+      GROUP BY meal_type
+      ORDER BY meal_type ASC
+    `);
 
+    res.status(200).json({
+      success: true,
+      categories: categories.rows
+    });
+
+  } catch (error) {
+    console.log("Get All Categories Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+const updateCuisine = async(req,res)=>{
+  try{
+    const {name} = req.params;
+    const {newName} = req.body;
+    if(!newName || !newName.trim()){
+      return res.status(400).json({
+        success: false,
+        message: "New cuisine name is required"
+      });
+    }
+    const oldCuisine = name.trim();
+    const updatedCuisine = newName.trim();
+    if(oldCuisine === updatedCuisine){
+      return res.status(400).json({
+        success:false,
+        message:"New cuisine name must be different"
+      });
+    }
+    const existing = await pool.query(
+      `SELECT COUNT(*) AS count
+      FROM menus 
+      WHERE LOWER(cuisine)=LOWER($1)`,[updatedCuisine]
+    );
+    if(existing.rows[0].count > 0){
+      return res.status(400).json({
+        success: false,
+        message: "Cuisine already exists"
+      });
+    }
+    const updated = await pool.query(
+      `UPDATE menus
+      SET cuisine=$1
+      WHERE cuisine=$2
+      RETURNING id`,[updatedCuisine,oldCuisine]
+    );
+    if(updated.rows.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"Cuisine not found"
+      });
+    }
+    res.status(200).json({
+      success:true,
+      message:"Cuisine updated successfully",
+      updatedMeals:updated.rows.length
+    });
+  }catch(error){
+    console.log("Update Cuisine Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+const updateCategory = async(req,res)=>{
+  try{
+    const { name } = req.params;
+    const { newName } = req.body;
+    if (!newName || !newName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "New category name is required"
+      });
+    }
+    const oldCategory = name.trim();
+    const updatedCategory = newName.trim();
+    if (oldCategory === updatedCategory) {
+      return res.status(400).json({
+        success: false,
+        message: "New category name must be different"
+      });
+    }
+    const existing = await pool.query(
+      `
+      SELECT COUNT(*) AS count
+      FROM menus
+      WHERE LOWER(meal_type) = LOWER($1)
+      `,
+      [updatedCategory]
+    );
+    if (Number(existing.rows[0].count) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Category already exists"
+      });
+    }
+    const updated = await pool.query(
+      `
+      UPDATE menus
+      SET meal_type = $1
+      WHERE meal_type = $2
+      RETURNING id
+      `,
+      [updatedCategory, oldCategory]
+    );
+    if (updated.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Category updated successfully",
+      updatedMeals: updated.rows.length
+    });
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
 module.exports = {
   getDashboardStats,
   getPendingCooks,
@@ -301,5 +465,9 @@ module.exports = {
   rejectCook,
   getAllUsers,
   getAllOrders,
-  getAllSubscriptions
+  getAllSubscriptions,
+  getAllCuisines,
+  getAllCategories,
+  updateCuisine,
+  updateCategory
 };

@@ -15,6 +15,7 @@ import UsersCooks from "./pages/Admin/UsersCooks";
 import AdminOrders from "./pages/Admin/AdminOrders";
 import {Toaster} from "react-hot-toast";
 import AdminSubscriptions from "./pages/Admin/AdminSubscriptions";
+import CuisinesAndCategories from "./pages/Admin/CuisinesAndCategories";
 function App(){
   return(
     <>
@@ -78,6 +79,8 @@ function App(){
       element={<AdminOrders/>}/>
       <Route path="/admin-subscriptions"
       element={<AdminSubscriptions/>}/>
+      <Route path="/categories-cuisines"
+      element={<CuisinesAndCategories/>}/>
     </Routes>
     </>
   )

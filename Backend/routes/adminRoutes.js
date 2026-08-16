@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
-const { getDashboardStats,getPendingCooks,approveCook,rejectCook,getAllUsers,getAllOrders,getAllSubscriptions } = require("../controllers/adminController");
+const { getDashboardStats,getPendingCooks,approveCook,rejectCook,getAllUsers,getAllOrders,getAllSubscriptions,getAllCuisines,getAllCategories,updateCategory,updateCuisine,deleteCategory,deleteCuisine } = require("../controllers/adminController");
 router.get(
   "/dashboard",
   verifyToken,
@@ -45,5 +45,9 @@ router.get(
   authorizeRole("admin"),
   getAllSubscriptions
 );
+router.get("/cuisines",verifyToken,authorizeRole("admin"),getAllCuisines);
+router.put("/cuisines/:name",verifyToken,authorizeRole("admin"),updateCuisine);
+router.get("/categories",verifyToken,authorizeRole("admin"),getAllCategories);
+router.put("/categories/:name",verifyToken,authorizeRole("admin"),updateCategory);
 
 module.exports = router;

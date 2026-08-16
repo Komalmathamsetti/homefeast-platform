@@ -9,6 +9,7 @@ import CookApprovals from "./CookApproval";
 import UsersCooks from "./UsersCooks";
 import AdminOrders from "./AdminOrders";
 import AdminSubscriptions from "./AdminSubscriptions";
+import CuisinesAndCategories from "./CuisinesAndCategories";
 
 const NAV = [
   { label: "Dashboard", icon: "📊" },
@@ -378,17 +379,20 @@ export default function AdminDashboard() {
           {active === "Subscriptions" && (
             <AdminSubscriptions/>
           )}
+          {active === "Categories & Cuisines" && (
+            <CuisinesAndCategories/>
+          )}
             {/* ================= OTHER PAGES ================= */}
-            {active !== "Dashboard" &&active !== "Cook Approvals" &&
-            active !== "Logout"  && active !== "Users & Cooks" && active !== "Orders" && active !== "Subscriptions" && (
-            <div className="flex min-h-125 items-center justify-center">
+            {active !== "Dashboard" && active !== "Cook Approvals" && active !== "Logout" && active !== "Users & Cooks" && active !== "Orders" &&
+             active !== "Subscriptions" && active !== "Categories & Cuisines" && (
+             <div className="flex min-h-125 items-center justify-center">
               <div className="rounded-3xl border border-orange-100 bg-white p-10 text-center shadow-sm">
-                 <div className="text-5xl">🚧</div>
-                 <h2 className="mt-4 text-xl font-bold text-gray-900">{active}</h2>
-                 <p className="mt-2 text-sm text-gray-500">This section will be built next.</p>
-                </div>
+                <div className="text-5xl">🚧</div>
+                <h2 className="mt-4 text-xl font-bold text-gray-900">{active}</h2>
+                <p className="mt-2 text-sm text-gray-500">This section will be built next.</p>
               </div>
-            )}
+            </div>
+          )}
           {/* ================= LOGOUT ================= */}
           {active === "Logout" && (
             <div className="flex h-full items-center justify-center">
