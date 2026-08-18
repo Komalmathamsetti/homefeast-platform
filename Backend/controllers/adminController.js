@@ -458,6 +458,107 @@ const updateCategory = async(req,res)=>{
     });
   }
 };
+const getAllComplaints = async (req, res) => {
+  try {
+    const complaints = await pool.query(`
+      SELECT
+        c.id,
+        c.description,
+        c.status,
+        c.created_at,
+        c.order_id,
+        u.name AS user_name,
+        u.email
+      FROM complaints c
+      JOIN users u
+        ON c.user_id = u.id
+      ORDER BY c.created_at DESC
+    `);
+
+    res.status(200).json({
+      success: true,
+      complaints: complaints.rows
+    });
+
+  } catch (error) {
+    console.log("Get Complaints Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+const getComplaintById = async(req,res)=>{
+  try{
+    const {id} = req.params;
+    const complaint = await pool.query(
+      `SELECT complaints*
+      users.name AS user_name,
+      users.email
+      FROM complaints
+      JOIN users
+      ON complaints.user_id = users.id
+      WHERE complaints.id = $1`,[id]
+    );
+    if(complaint.rows.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"Complaint not found"
+      });
+    }
+    res.status(200).json({
+      success:true,
+      complaint:complaint.rows[0]
+    });
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
+const updateComplaintStatus = async(req,res)=>{
+  try{
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowedStatus = [
+      "Open",
+      "In Progress",
+      "Resolved"
+    ];
+    if(!allowedStatus.includes(status)){
+      return res.status(400).json({
+        success:false,
+        message:"Invalid status"
+      });
+    }
+    const updated = await pool.query(
+      `UPDATE complaints
+      SET status = $1
+      WHERE id = $2
+      RETURNING*`,[status,id]
+    );
+    if(updated.rows.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"Complaint not found"
+      });
+    }
+    res.status(200).json({
+      success:true,
+      message:"Complaint updated successfully",
+      complaint:updated.rows[0]
+    });
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
 module.exports = {
   getDashboardStats,
   getPendingCooks,
@@ -469,5 +570,8 @@ module.exports = {
   getAllCuisines,
   getAllCategories,
   updateCuisine,
-  updateCategory
+  updateCategory,
+  getAllComplaints,
+  getComplaintById,
+  updateComplaintStatus
 };

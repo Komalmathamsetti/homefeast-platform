@@ -7,6 +7,10 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [complaintOpen,setComplaintOpen] = useState(false);
+  const [selectedOrder,setSelectedOrder] = useState(null);
+  const [complaintDescription,setComplaintDescription] = useState("");
+  const [submittingComplaint,setSubmittingComplaint] = useState(false);
   const fetchOrders = async () => {
     try {
         const response = await API.get("/orders/my");
@@ -57,30 +61,65 @@ export default function MyOrdersPage() {
     }
   };
   const handleCancelOrder = async (orderId) => {
-    const confirmCancel = await Swal.fire({
-      title: "Confirm Cancellation",
-      text: "Are you sure you want to cancel this order?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, cancel it!"
-    });
-    if (!confirmCancel.isConfirmed) return;
+  const confirmCancel = await Swal.fire({
+    title: "Confirm Cancellation",
+    text: "Are you sure you want to cancel this order?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, cancel it!"
+  });
+  if (!confirmCancel.isConfirmed) return;
+  try {
+    await API.put(`/orders/cancel/${orderId}`);
+    toast.success("Order cancelled successfully.");
+    fetchOrders();
+  } catch (error) {
+    console.log(error);
+    toast.error(
+      error.response?.data?.message ||
+      "Unable to cancel order."
+    );
+  }
+  };
+  const openComplaint = (order) => {
+    setSelectedOrder(order);
+    setComplaintDescription("");
+    setComplaintOpen(true);
+  };
+  const closeComplaint = () => {
+    if (submittingComplaint) return;
+    setComplaintOpen(false);
+    setSelectedOrder(null);
+    setComplaintDescription("");
+  };
+  const handleComplaintSubmit = async () => {
+    if (!complaintDescription.trim()) {
+      toast.error("Please describe your issue");
+      return;
+    }
+    if (!selectedOrder) {
+      return;
+    }
     try {
-        await API.put(`/orders/cancel/${orderId}`);
-        toast.success("Order cancelled successfully.");
-        fetchOrders();
+      setSubmittingComplaint(true);
+      await API.post("/customer/complaints", {
+        order_id: selectedOrder.id,
+        description: complaintDescription.trim()
+      });
+      toast.success("Complaint submitted successfully");
+      closeComplaint();
+    } catch (error) {
+      console.log("Complaint submission error:", error);
+      toast.error(
+        error.response?.data?.message || "Unable to submit complaint"
+      );
+    } finally {
+      setSubmittingComplaint(false);
     }
-    catch (error) {
-        console.log(error);
-        toast.error(
-            error.response?.data?.message ||
-            "Unable to cancel order."
-        );
-    }
-   };
-   if(error){
+  };
+  if(error){
     return(
     <div className="flex items-center justify-center min-h-screen">
         <h1 className="text-3xl font-bold text-red-500">{error}</h1>
@@ -235,26 +274,125 @@ export default function MyOrdersPage() {
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-sm text-slate-500">
                       Order status:
-                      <span className="ml-2 font-semibold text-slate-900">{order.order_status}</span>
+                      <span className="ml-2 font-semibold text-slate-900">
+                        {order.order_status}
+                      </span>
                     </div>
-
-                    <button
-                      onClick={()=>(handleCancelOrder(order.id))}
-                      className={`inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-sm font-bold shadow-sm transition sm:w-auto ${
-                        order.order_status === "Delivered" || order.order_status === "Cancelled"
-                          ? "cursor-not-allowed bg-gray-200 text-gray-500"
-                          : "bg-orange-500 text-white hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-200"
-                      }`}
-                      disabled={order.order_status === "Delivered" || order.order_status === "Cancelled"}
-                    >
-                      Cancel Order
-                    </button>
-                  </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      {/* Report Complaint */}
+                      {order.order_status === "Delivered" && (
+                        <button onClick={() => openComplaint(order)}
+                        className="inline-flex w-full items-center justify-center rounded-2xl bg-red-50 px-6 py-4 text-sm font-bold text-red-600 ring-1 ring-red-100 transition hover:bg-red-100 sm:w-auto">
+                          Report an Issue
+                        </button>
+                      )}
+                      {/* Cancel Order */}
+                      <button onClick={() => handleCancelOrder(order.id)} className={`inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-sm font-bold shadow-sm transition sm:w-auto ${
+                        order.order_status === "Delivered" ||
+                        order.order_status === "Cancelled" ? "cursor-not-allowed bg-gray-200 text-gray-500": "bg-orange-500 text-white hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-200"}`}
+                        disabled={ order.order_status === "Delivered" || order.order_status === "Cancelled"}>
+                         Cancel Order
+                      </button>
+                    </div>
+                    </div>
                 </div>
               </article>
             ))}
           </div>
         )}
+        {complaintOpen && selectedOrder && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+
+    <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
+
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-orange-100 px-6 py-5">
+
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">
+            Report an Issue
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Order #{selectedOrder.id}
+          </p>
+        </div>
+
+        <button
+          onClick={closeComplaint}
+          disabled={submittingComplaint}
+          className="rounded-xl px-3 py-2 text-xl text-slate-400 hover:bg-gray-100 hover:text-slate-700"
+        >
+          ×
+        </button>
+
+      </div>
+
+      {/* Body */}
+      <div className="px-6 py-6">
+
+        <div className="mb-5 rounded-2xl bg-orange-50 p-4 ring-1 ring-orange-100">
+
+          <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
+            Order
+          </p>
+
+          <p className="mt-1 font-bold text-slate-900">
+            {selectedOrder.dish_name}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Cooked by {selectedOrder.cook_name}
+          </p>
+
+        </div>
+
+        <label className="mb-2 block text-sm font-semibold text-slate-700">
+          Describe your issue
+        </label>
+
+        <textarea
+          value={complaintDescription}
+          onChange={(e) =>
+            setComplaintDescription(e.target.value)
+          }
+          rows={5}
+          placeholder="Please describe what went wrong..."
+          className="w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+        />
+
+        <p className="mt-2 text-xs text-slate-400">
+          Please provide enough details so the admin can investigate the issue.
+        </p>
+
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+
+        <button
+          onClick={closeComplaint}
+          disabled={submittingComplaint}
+          className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleComplaintSubmit}
+          disabled={submittingComplaint}
+          className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submittingComplaint
+            ? "Submitting..."
+            : "Submit Complaint"}
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+  )}
       </main>
     </div>
   );

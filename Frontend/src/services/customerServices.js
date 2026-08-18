@@ -6,4 +6,8 @@ export const getProfile = async()=>{
 export const updateProfile = async(profileData)=>{
     const response = API.put("/customer/profile",profileData);
     return (await response).data;
-}
+};
+export const createComplaint = async(data)=>{
+    const response = await API.post("/complaints",data);
+    return response.data;
+};

@@ -135,7 +135,72 @@ const updateProfile = async (req, res) => {
         });
     }
 };
+const createComplaint = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { order_id, description } = req.body;
 
+    if (!description || !description.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Complaint description is required"
+      });
+    }
+
+    const order = await pool.query(
+      `SELECT id
+       FROM orders
+       WHERE id = $1
+       AND user_id = $2`,
+      [order_id, userId]
+    );
+
+    if (order.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    const existingComplaint = await pool.query(
+      `SELECT id
+       FROM complaints
+       WHERE order_id = $1
+       AND user_id = $2
+       AND status != 'Resolved'`,
+      [order_id, userId]
+    );
+
+    if (existingComplaint.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "You already have an active complaint for this order"
+      });
+    }
+
+    const complaint = await pool.query(
+      `INSERT INTO complaints
+       (user_id, order_id, description)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [userId, order_id, description.trim()]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Complaint submitted successfully",
+      complaint: complaint.rows[0]
+    });
+
+  } catch (error) {
+    console.log("Create Complaint Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
 module.exports = {
-  getDashboard,getProfile,updateProfile
+  getDashboard,getProfile,updateProfile,createComplaint
 };
