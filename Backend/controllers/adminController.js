@@ -462,27 +462,23 @@ const getAllComplaints = async (req, res) => {
   try {
     const complaints = await pool.query(`
       SELECT
-        c.id,
-        c.description,
-        c.status,
-        c.created_at,
-        c.order_id,
-        u.name AS user_name,
-        u.email
-      FROM complaints c
-      JOIN users u
-        ON c.user_id = u.id
-      ORDER BY c.created_at DESC
+        complaints.id,
+        complaints.order_id,
+        complaints.description,
+        complaints.status,
+        complaints.created_at,
+        users.name AS customer_name
+      FROM complaints
+      JOIN users
+        ON complaints.user_id = users.id
+      ORDER BY complaints.created_at DESC
     `);
-
     res.status(200).json({
       success: true,
       complaints: complaints.rows
     });
-
   } catch (error) {
-    console.log("Get Complaints Error:", error);
-
+    console.log("Get All Complaints Error:", error);
     res.status(500).json({
       success: false,
       message: "Server Error"
@@ -519,43 +515,57 @@ const getComplaintById = async(req,res)=>{
     });
   }
 };
-const updateComplaintStatus = async(req,res)=>{
-  try{
+const updateComplaintStatus = async (req, res) => {
+  try {
     const { id } = req.params;
     const { status } = req.body;
-    const allowedStatus = [
+
+    const allowedStatuses = [
       "Open",
       "In Progress",
       "Resolved"
     ];
-    if(!allowedStatus.includes(status)){
+
+    if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
-        success:false,
-        message:"Invalid status"
+        success: false,
+        message: "Invalid complaint status"
       });
     }
+
+    const complaint = await pool.query(
+      `SELECT id
+       FROM complaints
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (complaint.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found"
+      });
+    }
+
     const updated = await pool.query(
       `UPDATE complaints
-      SET status = $1
-      WHERE id = $2
-      RETURNING*`,[status,id]
+       SET status = $1
+       WHERE id = $2
+       RETURNING id, order_id, description, status, created_at`,
+      [status, id]
     );
-    if(updated.rows.length === 0){
-      return res.status(404).json({
-        success:false,
-        message:"Complaint not found"
-      });
-    }
+
     res.status(200).json({
-      success:true,
-      message:"Complaint updated successfully",
-      complaint:updated.rows[0]
+      success: true,
+      message: "Complaint status updated successfully",
+      complaint: updated.rows[0]
     });
-  }catch(error){
-    console.log(error);
-    return res.status(500).json({
-      success:false,
-      message:"Server Error"
+
+  } catch (error) {
+    console.log("Update Complaint Status Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
     });
   }
 };

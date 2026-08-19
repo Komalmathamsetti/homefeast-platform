@@ -201,6 +201,35 @@ const createComplaint = async (req, res) => {
     });
   }
 };
+const getMyComplaints = async (req, res) => {
+  try {
+    const complaints = await pool.query(
+      `SELECT
+        id,
+        order_id,
+        description,
+        status,
+        created_at
+       FROM complaints
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [req.user.userId]
+    );
+
+    res.status(200).json({
+      success: true,
+      complaints: complaints.rows
+    });
+
+  } catch (error) {
+    console.log("Get My Complaints Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
 module.exports = {
-  getDashboard,getProfile,updateProfile,createComplaint
+  getDashboard,getProfile,updateProfile,createComplaint,getMyComplaints
 };

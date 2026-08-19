@@ -11,3 +11,7 @@ export const createComplaint = async(data)=>{
     const response = await API.post("/complaints",data);
     return response.data;
 };
+export const getMyComplaints = async () => {
+  const response = await API.get("/customer/complaints");
+  return response.data;
+};

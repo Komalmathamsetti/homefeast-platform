@@ -10,7 +10,7 @@ import UsersCooks from "./UsersCooks";
 import AdminOrders from "./AdminOrders";
 import AdminSubscriptions from "./AdminSubscriptions";
 import CuisinesAndCategories from "./CuisinesAndCategories";
-
+import ComplaintsAndDisputes from "./Complaints";
 const NAV = [
   { label: "Dashboard", icon: "📊" },
   { label: "Users & Cooks", icon: "👥" },
@@ -381,6 +381,9 @@ export default function AdminDashboard() {
           )}
           {active === "Categories & Cuisines" && (
             <CuisinesAndCategories/>
+          )}
+          {active === "Complaints & Disputes" && (
+            <ComplaintsAndDisputes/>
           )}
             {/* ================= OTHER PAGES ================= */}
             {active !== "Dashboard" && active !== "Cook Approvals" && active !== "Logout" && active !== "Users & Cooks" && active !== "Orders" &&

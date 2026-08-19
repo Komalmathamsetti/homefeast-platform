@@ -51,5 +51,5 @@ router.get("/categories",verifyToken,authorizeRole("admin"),getAllCategories);
 router.put("/categories/:name",verifyToken,authorizeRole("admin"),updateCategory);
 router.get("/complaints",verifyToken,authorizeRole("admin"),getAllComplaints);
 router.get("/complaints/:id",verifyToken,authorizeRole("admin"),getComplaintById);
-router.put("/complaint/:id/status",verifyToken,authorizeRole("admin"),updateComplaintStatus);
+router.put("/complaints/:id/status",verifyToken,authorizeRole("admin"),updateComplaintStatus);
 module.exports = router;

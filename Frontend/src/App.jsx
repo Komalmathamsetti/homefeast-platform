@@ -16,6 +16,8 @@ import AdminOrders from "./pages/Admin/AdminOrders";
 import {Toaster} from "react-hot-toast";
 import AdminSubscriptions from "./pages/Admin/AdminSubscriptions";
 import CuisinesAndCategories from "./pages/Admin/CuisinesAndCategories";
+import ComplaintsAndDisputes from "./pages/Admin/Complaints";
+import MyComplaints from "./pages/Customer/MyComplaints";
 function App(){
   return(
     <>
@@ -48,6 +50,8 @@ function App(){
          path="/subscriptions"
          element={<MySubscriptionsPage />}
       />
+      <Route path="/customer/complaints"
+      element={<MyComplaints/>}/>
       <Route
         path="/cook/dashboard"
         element={
@@ -81,6 +85,8 @@ function App(){
       element={<AdminSubscriptions/>}/>
       <Route path="/categories-cuisines"
       element={<CuisinesAndCategories/>}/>
+      <Route path="/admin/complaints"
+      element={<ComplaintsAndDisputes />}/>
     </Routes>
     </>
   )

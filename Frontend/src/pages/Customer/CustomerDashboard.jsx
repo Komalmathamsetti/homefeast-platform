@@ -10,6 +10,7 @@ const NAV = [
   { label: "Browse Cooks", icon: "🍱" },
   { label: "My Orders", icon: "📦" },
   { label: "My Subscriptions", icon: "📅" },
+  {label:"My Complaints",icon:"⚠️"},
   { label: "Profile", icon: "👤" },
   { label: "Logout", icon: "🚪" },
 ];
@@ -153,9 +154,11 @@ export default function CustomerDashboard() {
                   navigate("/orders");
                 }else if(label === "My Subscriptions"){
                   navigate("/subscriptions");
+                }else if(label === "My Complaints"){
+                  navigate("/customer/complaints");
                 }
               }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer
                 ${active === label
                   ? "bg-orange-500 text-white"
                   : "text-gray-600 hover:bg-orange-50 hover:text-orange-500"}`}

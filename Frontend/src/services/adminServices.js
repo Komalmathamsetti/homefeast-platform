@@ -54,3 +54,18 @@ export const updateCategory = async (name, newName) => {
   );
   return response.data;
 };
+export const getAllComplaints = async () => {
+  const response = await API.get("/admin/complaints");
+  return response.data;
+};
+export const getComplaintById = async (id) => {
+  const response = await API.get(`/admin/complaints/${id}`);
+  return response.data;
+};
+export const updateComplaintStatus = async (id, status) => {
+  const response = await API.put(
+    `/admin/complaints/${id}/status`,
+    { status }
+  );
+  return response.data;
+};
