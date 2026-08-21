@@ -148,7 +148,7 @@ const updateCookProfile = async (req, res) => {
 const getMyComplaints = async (req, res) => {
   try {
     const cookUserId = req.user.userId;
-
+    console.log("Logged in cook user ID:", cookUserId);
     const complaints = await pool.query(
       `SELECT
         complaints.id,
@@ -184,9 +184,89 @@ const getMyComplaints = async (req, res) => {
     });
   }
 };
+const respondToComplaint = async(req,res)=>{
+  try{
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const { message } = req.body;
+    if(!message || !message.trim()){
+      return res.status(403).json({
+        success:false,
+        message:"Response message is required"
+      });
+    }
+    const complaint = await pool.query(
+      `SELECT 
+        complaints.id,
+        complaints.status,
+        cooks.id AS cook_id
+        FROM complaints 
+        JOIN cooks 
+        ON complaints.cook_id = cooks.id
+        WHERE complaints.id = $1
+        AND cooks.user_id = $2`,[id,userId]
+    );
+    if (complaint.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Complaint not found",
+      });
+    }
+
+    // Don't allow response after admin has resolved it
+    if (complaint.rows[0].status === "Resolved") {
+      return res.status(400).json({
+        success: false,
+        message: "Resolved complaints cannot be responded to",
+      });
+    }  
+    const result = await pool.query(
+      `
+      INSERT INTO complaint_messages
+      (
+        complaint_id,
+        sender_id,
+        sender_role,
+        message
+      )
+      VALUES ($1, $2, $3, $4)
+      RETURNING *
+      `,
+      [
+        id,
+        userId,
+        "cook",
+        message.trim(),
+      ]
+    );
+
+    // Move complaint to In Progress
+    await pool.query(
+      `
+      UPDATE complaints
+      SET status = 'In Progress'
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Response submitted successfully",
+      response: result.rows[0],
+    });
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
 module.exports = {
     createcookProfile,
     getCookProfile,
     updateCookProfile,
-    getMyComplaints
+    getMyComplaints,
+    respondToComplaint
 };

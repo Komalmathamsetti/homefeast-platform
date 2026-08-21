@@ -69,10 +69,22 @@ export const updateComplaintStatus = async (id, status) => {
   );
   return response.data;
 };
-export const assignComplaintToCook = async(id,cook_id)=>{
+export const assignComplaintToCook = async (
+  complaintId,
+  cookId
+) => {
   const response = await API.put(
-    `/admin/complaints/${id}/assign`,
-    { cook_id }
+    `/api/admin/complaints/${complaintId}/assign`,
+    {
+      cook_id: cookId
+    }
   );
+  return response.data;
+};
+export const getAllCooks = async () => {
+  const response = await API.get(
+    "/api/admin/cooks"
+  );
+
   return response.data;
 };

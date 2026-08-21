@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
-const { getDashboardStats,getPendingCooks,approveCook,rejectCook,getAllUsers,getAllOrders,getAllSubscriptions,getAllCuisines,getAllCategories,updateCategory,updateCuisine,getAllComplaints,getComplaintById,updateComplaintStatus,assignComplaintToCook } = require("../controllers/adminController");
+const { getDashboardStats,getPendingCooks,approveCook,rejectCook,getAllUsers,getAllOrders,getAllSubscriptions,getAllCuisines,getAllCategories,updateCategory,updateCuisine,getAllComplaints,getComplaintById,updateComplaintStatus,assignComplaintToCook,getAllCooks } = require("../controllers/adminController");
 router.get(
   "/dashboard",
   verifyToken,
@@ -53,4 +53,5 @@ router.get("/complaints",verifyToken,authorizeRole("admin"),getAllComplaints);
 router.get("/complaints/:id",verifyToken,authorizeRole("admin"),getComplaintById);
 router.put("/complaints/:id/status",verifyToken,authorizeRole("admin"),updateComplaintStatus);
 router.put("/complaints/:id/assign",verifyToken,authorizeRole("admin"),assignComplaintToCook);
+router.get("/cooks",verifyToken,authorizeRole("admin"),getAllCooks);
 module.exports = router;

@@ -245,7 +245,7 @@ return (
                           Order ID
                         </p>
                         <p className="mt-2 text-sm font-semibold text-slate-700">
-                          {complaint.orderId || "Not available"}
+                          {complaint.order_id ? `#${complaint.order_id}` : "Not available"}
                         </p>
                       </div>
 
@@ -254,10 +254,16 @@ return (
                           Submitted date
                         </p>
                         <p className="mt-2 text-sm font-semibold text-slate-700">
-                          {complaint.date ||
-                            complaint.submittedDate ||
-                            complaint.complaintDate ||
-                            "Not available"}
+                          {complaint.created_at ? new Date(complaint.created_at).toLocaleDateString() : "Not available"}
+                        </p>
+                      </div>
+                      {/* Cook */}
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Cook
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-700">
+                          {complaint.cook_name || "Not available"}
                         </p>
                       </div>
 

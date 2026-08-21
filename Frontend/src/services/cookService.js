@@ -15,6 +15,18 @@ export const getCookDashboard = async()=>{
   return response.data;
 };
 export const getMyComplaints = async()=>{
-  const response = await API.get("/cooks/comaplaints");
+  const response = await API.get("/cooks/complaints");
+  return response.data;
+};
+export const respondToComplaint = async (
+  complaintId,
+  message
+) => {
+  const response = await API.post(
+    `/cooks/complaints/${complaintId}/respond`,
+    {
+      message,
+    }
+  );
   return response.data;
 };

@@ -1,5 +1,5 @@
 import { useState,useEffect } from "react";
-import { getAllComplaints,updateComplaintStatus } from "../../services/adminServices";
+import { getAllComplaints,updateComplaintStatus,assignComplaintToCook,getAllCooks } from "../../services/adminServices";
 import {
 AlertCircle,
 CalendarDays,
@@ -18,6 +18,11 @@ const [loading,setLoading] = useState(true);
 const [activeFilter,setActiveFilter] = useState("All");
 const [searchTerm,setSearchTerm] = useState("");
 const [updatingId,setUpdatingId] = useState(null);
+const [cooks, setCooks] = useState([]);
+const [assignModalOpen, setAssignModalOpen] = useState(false);
+const [selectedComplaint, setSelectedComplaint] = useState(null);
+const [selectedCook, setSelectedCook] = useState("");
+const [assigning, setAssigning] = useState(false);
 useEffect(()=>{
   const loadComplaints = async()=>{
     try{
@@ -34,6 +39,86 @@ useEffect(()=>{
   };
   loadComplaints();
 },[]);
+useEffect(() => {
+  const loadCooks = async () => {
+    try {
+      const response = await getAllCooks();
+
+      setCooks(response?.cooks || []);
+    } catch (error) {
+      console.error("Failed to load cooks:", error);
+    }
+  };
+
+  loadCooks();
+}, []);
+const openAssignModal = (complaint) => {
+  setSelectedComplaint(complaint);
+  setSelectedCook("");
+  setAssignModalOpen(true);
+  setError("");
+};
+
+const closeAssignModal = () => {
+  if (assigning) return;
+
+  setAssignModalOpen(false);
+  setSelectedComplaint(null);
+  setSelectedCook("");
+};
+
+const handleAssignCook = async () => {
+  if (!selectedCook) {
+    setError("Please select a cook");
+    return;
+  }
+
+  if (!selectedComplaint) {
+    return;
+  }
+
+  try {
+    setAssigning(true);
+    setError("");
+
+    await assignComplaintToCook(
+      selectedComplaint.id,
+      selectedCook
+    );
+
+    const assignedCook = cooks.find(
+      (cook) =>
+        String(cook.id) === String(selectedCook)
+    );
+
+    setComplaints((prev) =>
+      prev.map((item) =>
+        item.id === selectedComplaint.id
+          ? {
+              ...item,
+              cook_id: Number(selectedCook),
+              cook_name:
+                assignedCook?.name || "Assigned Cook",
+              status: "In Progress"
+            }
+          : item
+      )
+    );
+    closeAssignModal();
+  } catch (error) {
+    console.error(
+      "Failed to assign complaint:",
+      error
+    );
+
+    setError(
+      error?.response?.data?.message ||
+      "Failed to assign complaint"
+    );
+  } finally {
+    setAssigning(false);
+  }
+};
 const filters = ["All", "Open", "In Progress", "Resolved"];
 
 const statusConfig = {
@@ -134,7 +219,6 @@ Customer support
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            readOnly
             placeholder="Search complaints..."
             aria-label="Search complaints"
             className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-500/10"
@@ -169,7 +253,6 @@ Customer support
           ).replace(/[^a-zA-Z0-9-_]/g, "-");
 
           const customerName = complaint.customer_name || "Unknown customer";
-
           const customerAvatar =
             complaint.customerAvatar || complaint.customer?.avatar;
 
@@ -276,7 +359,12 @@ Customer support
                     >
                       View Details
                     </button>
-
+                    {!complaint.cook_id && status !== "Resolved" && (
+                      <button type="button" onClick={() => openAssignModal(complaint)}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-orange-500 px-4 text-sm font-semibold text-white transition hover:bg-orange-600">
+                        Assign Cook
+                      </button>
+                    )}
                     <div className="relative">
                       <select value={status}
                       disabled={updatingId === complaint.id}
@@ -284,27 +372,25 @@ Customer support
                         const newStatus = e.target.value;
                         try {
                           setUpdatingId(complaint.id);
-                          await updateComplaintStatus(
-                            complaint.id,newStatus
-                          );
-                          setComplaints((prev) => prev.map((item) =>
-                            item.id === complaint.id ? {
-                              ...item,status: newStatus,
-                            }: item
-                          )
-                        );
-                      } catch (error) {
-                        console.error("Failed to update complaint status:",error);
-                        setError(error?.response?.data?.message || "Failed to update complaint status");
-                      } finally {                        
-                        setUpdatingId(null);
-                      }
-                    }}
-                        className="h-10 w-full appearance-none rounded-xl border border-orange-200 bg-orange-50 pl-4 pr-9 text-sm font-semibold text-orange-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 sm:w-auto"
-                      >
-                        <option>Open</option>
-                        <option>In Progress</option>
-                        <option>Resolved</option>
+                          await updateComplaintStatus(complaint.id,newStatus);
+                          setComplaints((prev) =>
+                            prev.map((item) => item.id === complaint.id ? {...item,status: newStatus}: item));
+                        } catch (error) {
+                          console.error("Failed to update complaint status:",error);
+                          setError(error?.response?.data?.message || "Failed to update complaint status");
+                        } finally {
+                          setUpdatingId(null);
+                        }
+                      }}className="h-10 w-full appearance-none rounded-xl border border-orange-200 bg-orange-50 pl-4 pr-9 text-sm font-semibold text-orange-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10 sm:w-auto">
+                        <option value="Open">
+                          Open
+                        </option>
+                        <option value="In Progress">
+                          In Progress
+                        </option>
+                        <option value="Resolved">
+                          Resolved
+                        </option>
                       </select>
                       <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-orange-600" />
                     </div>
@@ -385,7 +471,15 @@ Customer support
                 </div>
                 </div>
                 </div>
-                  <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
+                  <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Order ID
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-700">
+                        {complaint.order_id || "Not available"}
+                      </p>
+                    </div>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                         Status
@@ -403,9 +497,7 @@ Customer support
                         Complaint date
                       </p>
                       <p className="mt-2 text-sm font-semibold text-slate-700">
-                        {complaint.date ||
-                          complaint.complaintDate ||
-                          "Not available"}
+                        {complaint.created_at ? new Date(complaint.created_at).toLocaleDateString() : "Not available"}
                       </p>
                     </div>
                   </div>
@@ -420,6 +512,33 @@ Customer support
                         "No description provided."}
                     </p>
                   </div>
+                  {complaint.cook_id && (
+                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                      <div className="flex items-center gap-2">
+                        <MessageSquareWarning className="h-5 w-5 text-blue-600" />
+                        <p className="text-sm font-semibold text-slate-900">
+                          Cook's Response
+                        </p>
+                      </div>
+                      {complaint.cook_response ? (
+                        <>
+                        <p className="mt-3 text-sm leading-7 text-slate-700">
+                          {complaint.cook_response}
+                        </p>
+                        {complaint.cook_response_date && (
+                          <p className="mt-3 text-xs text-slate-500">
+                            Responded on{" "}
+                            {new Date(complaint.cook_response_date).toLocaleString()}
+                          </p>
+                        )}
+                        </>
+                        ) : (
+                        <p className="mt-3 text-sm text-slate-500">
+                          The cook has been assigned but has not responded yet.
+                        </p>
+                      )}
+                      </div>
+                    )}
                 </div>
               </dialog>
             </article>
@@ -443,6 +562,120 @@ Customer support
       </div>
     )}
   </div>
+  {assignModalOpen && selectedComplaint && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+
+    <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+
+      {/* Header */}
+      <div className="flex items-start justify-between border-b border-slate-200 p-5 sm:p-6">
+
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-orange-600">
+            Complaint Assignment
+          </p>
+
+          <h2 className="mt-1 text-xl font-bold text-slate-900">
+            Assign Cook
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Assign this complaint to a cook.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={closeAssignModal}
+          disabled={assigning}
+          className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+      </div>
+
+      {/* Complaint */}
+      <div className="px-5 pt-5 sm:px-6">
+
+        <div className="rounded-xl bg-slate-50 p-4">
+
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            Complaint #{selectedComplaint.id}
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {selectedComplaint.description}
+          </p>
+
+        </div>
+
+      </div>
+
+      {/* Cook selection */}
+      <div className="px-5 py-5 sm:px-6">
+
+        <label className="text-sm font-semibold text-slate-700">
+          Select Cook
+        </label>
+
+        <select
+          value={selectedCook}
+          onChange={(e) =>
+            setSelectedCook(e.target.value)
+          }
+          disabled={assigning}
+          className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-500/10"
+        >
+          <option value="">
+            Select a cook
+          </option>
+
+          {cooks.map((cook) => (
+            <option
+              key={cook.id}
+              value={cook.id}
+            >
+              {cook.name}
+            </option>
+          ))}
+        </select>
+
+        {cooks.length === 0 && (
+          <p className="mt-2 text-xs text-red-500">
+            No cooks found.
+          </p>
+        )}
+
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-3 border-t border-slate-200 p-5 sm:p-6">
+
+        <button
+          type="button"
+          onClick={closeAssignModal}
+          disabled={assigning}
+          className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          onClick={handleAssignCook}
+          disabled={assigning || !selectedCook}
+          className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {assigning ? "Assigning..." : "Assign Cook"}
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
 </div>
 );
 }

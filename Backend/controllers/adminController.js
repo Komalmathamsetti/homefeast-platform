@@ -460,27 +460,51 @@ const updateCategory = async(req,res)=>{
 };
 const getAllComplaints = async (req, res) => {
   try {
-    const complaints = await pool.query(`
+    const complaints = await pool.query(
+      `
       SELECT
-    complaints.id,
-    complaints.order_id,
-    complaints.description,
-    complaints.status,
-    complaints.created_at,
-    customer.name AS customer_name,
-    cook_user.name AS cook_name,
-    cooks.id AS cook_id
-  FROM complaints
-  JOIN users customer
-    ON complaints.user_id = customer.id
-  JOIN orders
-    ON complaints.order_id = orders.id
-  JOIN cooks
-    ON orders.cook_id = cooks.id
-  JOIN users cook_user
-    ON cooks.user_id = cook_user.id
-  ORDER BY complaints.created_at DESC
-    `);
+        complaints.id,
+        complaints.user_id,
+        complaints.order_id,
+        complaints.description,
+        complaints.status,
+        complaints.created_at,
+
+        customer.name AS customer_name,
+        customer.email AS customer_email,
+
+        cooks.id AS cook_id,
+        cook_user.name AS cook_name,
+        cook_user.email AS cook_email,
+
+        cook_response.message AS cook_response,
+        cook_response.created_at AS cook_response_date
+
+      FROM complaints
+
+      JOIN users customer
+        ON complaints.user_id = customer.id
+
+      LEFT JOIN cooks
+        ON complaints.cook_id = cooks.id
+
+      LEFT JOIN users cook_user
+        ON cooks.user_id = cook_user.id
+
+      LEFT JOIN LATERAL (
+        SELECT
+          message,
+          created_at
+        FROM complaint_messages
+        WHERE complaint_id = complaints.id
+        AND sender_role = 'cook'
+        ORDER BY created_at DESC
+        LIMIT 1
+      ) cook_response
+        ON true
+      ORDER BY complaints.created_at DESC
+      `
+    );
     res.status(200).json({
       success: true,
       complaints: complaints.rows
@@ -493,33 +517,78 @@ const getAllComplaints = async (req, res) => {
     });
   }
 };
-const getComplaintById = async(req,res)=>{
-  try{
-    const {id} = req.params;
+const getComplaintById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
     const complaint = await pool.query(
-      `SELECT complaints*
-      users.name AS user_name,
-      users.email
+      `
+      SELECT
+        complaints.id,
+        complaints.user_id,
+        complaints.order_id,
+        complaints.description,
+        complaints.status,
+        complaints.created_at,
+
+        customer.name AS customer_name,
+        customer.email AS customer_email,
+        customer.phone AS customer_phone,
+
+        cooks.id AS cook_id,
+        cook_user.name AS cook_name,
+        cook_user.email AS cook_email,
+        cook_user.phone AS cook_phone,
+
+        cook_response.message AS cook_response,
+        cook_response.created_at AS cook_response_date
+
       FROM complaints
-      JOIN users
-      ON complaints.user_id = users.id
-      WHERE complaints.id = $1`,[id]
+
+      JOIN users customer
+        ON complaints.user_id = customer.id
+
+      LEFT JOIN cooks
+        ON complaints.cook_id = cooks.id
+
+      LEFT JOIN users cook_user
+        ON cooks.user_id = cook_user.id
+
+      LEFT JOIN LATERAL (
+        SELECT
+          message,
+          created_at
+        FROM complaint_messages
+        WHERE complaint_id = complaints.id
+        AND sender_role = 'cook'
+        ORDER BY created_at DESC
+        LIMIT 1
+      ) cook_response
+        ON true
+
+      WHERE complaints.id = $1
+      `,
+      [id]
     );
-    if(complaint.rows.length === 0){
+
+    if (complaint.rows.length === 0) {
       return res.status(404).json({
-        success:false,
-        message:"Complaint not found"
+        success: false,
+        message: "Complaint not found"
       });
     }
+
     res.status(200).json({
-      success:true,
-      complaint:complaint.rows[0]
+      success: true,
+      complaint: complaint.rows[0]
     });
-  }catch(error){
-    console.log(error);
-    return res.status(500).json({
-      success:false,
-      message:"Server Error"
+
+  } catch (error) {
+    console.error("Get Complaint By ID Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
     });
   }
 };
@@ -577,45 +646,124 @@ const updateComplaintStatus = async (req, res) => {
     });
   }
 };
-const assignComplaintToCook = async(req,res)=>{
-  try{
+const assignComplaintToCook = async (req, res) => {
+  try {
     const { id } = req.params;
     const { cook_id } = req.body;
+
+    if (!cook_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Cook ID is required"
+      });
+    }
+
+    // Check complaint exists
     const complaint = await pool.query(
-      `SELECT id FROM complaints WHERE id = $1`,[id]
+      `
+      SELECT
+        id,
+        status,
+        cook_id
+      FROM complaints
+      WHERE id = $1
+      `,
+      [id]
     );
-    if(complaints.rows.length === 0){
-      return res.status(403).json({
-        success:false,
-        message:"Complaint not found"
-      });
-    }
-    const cook = await pool.query(
-      `SELECT id FROM cooks WHERE id = $1`,[cook_id]
-    );
-    if(cook.rows.length === 0){
+
+    if (complaint.rows.length === 0) {
       return res.status(404).json({
-        success:false,
-        message:"Cook not found"
+        success: false,
+        message: "Complaint not found"
       });
     }
-    const updated = await pool.query(
-      `UPDATE complaints
-      SET cook_id = $1,
-      status='IN PROGRESS'
-      WHERE id = $2
-      RETURNING *`,[cook_id,id]
+
+    // Don't assign resolved complaints
+    if (complaint.rows[0].status === "Resolved") {
+      return res.status(400).json({
+        success: false,
+        message: "Resolved complaint cannot be assigned"
+      });
+    }
+
+    // Check that the cook exists
+    const cook = await pool.query(
+      `
+      SELECT
+        cooks.id,
+        cooks.user_id,
+        users.name,
+        users.email
+      FROM cooks
+      JOIN users
+        ON cooks.user_id = users.id
+      WHERE cooks.id = $1
+      `,
+      [cook_id]
     );
+
+    if (cook.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cook not found"
+      });
+    }
+
+    // Assign cook to complaint
+    const updatedComplaint = await pool.query(
+      `
+      UPDATE complaints
+      SET
+        cook_id = $1,
+        status = 'In Progress'
+      WHERE id = $2
+      RETURNING *
+      `,
+      [cook_id, id]
+    );
+
     res.status(200).json({
-      success:true,
-      message:"Complaint assigned to the cook",
-      complaint:updated.rows[0]
+      success: true,
+      message: "Complaint assigned to cook successfully",
+      complaint: updatedComplaint.rows[0]
     });
-  }catch(error){
-    console.log(error);
-    return res.status(500).json({
-      success:false,
-      message:"Server Error"
+
+  } catch (error) {
+    console.error("Assign Complaint Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+const getAllCooks = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        cooks.id,
+        cooks.user_id,
+        users.name,
+        users.email
+      FROM cooks
+      JOIN users
+        ON cooks.user_id = users.id
+      ORDER BY users.name ASC
+      `
+    );
+
+    res.status(200).json({
+      success: true,
+      cooks: result.rows
+    });
+
+  } catch (error) {
+    console.error("Get All Cooks Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
     });
   }
 };
@@ -634,5 +782,6 @@ module.exports = {
   getAllComplaints,
   getComplaintById,
   updateComplaintStatus,
-  assignComplaintToCook
+  assignComplaintToCook,
+  getAllCooks
 };

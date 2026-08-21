@@ -6,10 +6,12 @@ const {
     createcookProfile,
     getCookProfile,
     updateCookProfile,
-    getMyComplaints 
+    getMyComplaints,
+    respondToComplaint
 }  = require('../controllers/cookController');
 router.post("/",verifyToken,authorizeRole("cook"),createcookProfile);
 router.get("/profile",verifyToken,authorizeRole("cook"),getCookProfile);
 router.put("/profile",verifyToken,authorizeRole("cook"),updateCookProfile);
 router.get("/complaints",verifyToken,authorizeRole("cook"),getMyComplaints);
+router.post("/complaints/:id/respond",verifyToken,authorizeRole("cook"),respondToComplaint);
 module.exports = router;

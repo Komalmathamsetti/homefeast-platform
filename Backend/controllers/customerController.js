@@ -138,20 +138,27 @@ const updateProfile = async (req, res) => {
 const createComplaint = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { order_id, description } = req.body;
 
-    if (!description || !description.trim()) {
+    const {
+      order_id,
+      description
+    } = req.body;
+
+    if (!order_id || !description || !description.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Complaint description is required"
+        message: "Order ID and complaint description are required"
       });
     }
 
+    // Check that this order belongs to the customer
     const order = await pool.query(
-      `SELECT id
-       FROM orders
-       WHERE id = $1
-       AND user_id = $2`,
+      `
+      SELECT id
+      FROM orders
+      WHERE id = $1
+      AND user_id = $2
+      `,
       [order_id, userId]
     );
 
@@ -162,12 +169,15 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    // Prevent duplicate active complaints
     const existingComplaint = await pool.query(
-      `SELECT id
-       FROM complaints
-       WHERE order_id = $1
-       AND user_id = $2
-       AND status != 'Resolved'`,
+      `
+      SELECT id
+      FROM complaints
+      WHERE order_id = $1
+      AND user_id = $2
+      AND status != 'Resolved'
+      `,
       [order_id, userId]
     );
 
@@ -178,12 +188,33 @@ const createComplaint = async (req, res) => {
       });
     }
 
+    // IMPORTANT:
+    // cook_id is intentionally NOT inserted.
+    // Admin will assign the cook later if required.
+
     const complaint = await pool.query(
-      `INSERT INTO complaints
-       (user_id, order_id, description)
-       VALUES ($1, $2, $3)
-       RETURNING *`,
-      [userId, order_id, description.trim()]
+      `
+      INSERT INTO complaints
+      (
+        user_id,
+        order_id,
+        description,
+        status
+      )
+      VALUES
+      (
+        $1,
+        $2,
+        $3,
+        'Open'
+      )
+      RETURNING *
+      `,
+      [
+        userId,
+        order_id,
+        description.trim()
+      ]
     );
 
     res.status(201).json({
@@ -193,7 +224,7 @@ const createComplaint = async (req, res) => {
     });
 
   } catch (error) {
-    console.log("Create Complaint Error:", error);
+    console.error("Create Complaint Error:", error);
 
     res.status(500).json({
       success: false,
@@ -201,35 +232,62 @@ const createComplaint = async (req, res) => {
     });
   }
 };
+
+
+/* =====================================================
+   Get Customer's Complaints
+===================================================== */
+
 const getMyComplaints = async (req, res) => {
   try {
+    const userId = req.user.userId;
+
     const complaints = await pool.query(
-      `SELECT
-        id,
-        order_id,
-        description,
-        status,
-        created_at
-       FROM complaints
-       WHERE user_id = $1
-       ORDER BY created_at DESC`,
-      [req.user.userId]
+      `
+      SELECT
+        complaints.id,
+        complaints.order_id,
+        complaints.description,
+        complaints.status,
+        complaints.created_at,
+
+        cooks.id AS cook_id,
+        cook_user.name AS cook_name
+
+      FROM complaints
+
+      LEFT JOIN cooks
+        ON complaints.cook_id = cooks.id
+
+      LEFT JOIN users cook_user
+        ON cooks.user_id = cook_user.id
+
+      WHERE complaints.user_id = $1
+
+      ORDER BY complaints.created_at DESC
+      `,
+      [userId]
     );
 
     res.status(200).json({
       success: true,
-      complaints: complaints.rows
+      complaints: complaints.rows,
     });
 
   } catch (error) {
-    console.log("Get My Complaints Error:", error);
+    console.log(
+      "Get My Complaints Error:",
+      error
+    );
 
     res.status(500).json({
       success: false,
-      message: "Server Error"
+      message: "Server Error",
     });
   }
 };
+
+
 module.exports = {
   getDashboard,getProfile,updateProfile,createComplaint,getMyComplaints
 };

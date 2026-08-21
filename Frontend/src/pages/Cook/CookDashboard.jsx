@@ -9,6 +9,7 @@ import AddMealForm from "./MealForm";
 import CookHome from "./CookHome";
 import { getCookDashboard } from "../../services/cookService";
 import Swal from "sweetalert2";
+import CookComplaints from "./CookComplaints";
 const NAV = [
   { label: "Home", icon: "🏠" },
   { label: "Dashboard", icon: "📊" },
@@ -17,6 +18,7 @@ const NAV = [
   { label: "Subscriptions", icon: "📋" },
   { label: "Orders", icon: "🛒" },
   { label: "Earnings", icon: "💰" },
+  { label: "Complaints",icon: "⚠️"},
   { label: "Logout", icon: "🚪" },
 ];
 export default function CookDashboard() {
@@ -94,6 +96,8 @@ export default function CookDashboard() {
       return <CookSubscriptions />;
     case "Earnings":
       return <CookEarnings />;
+    case "Complaints":
+      return <CookComplaints/>;
     default:
       return null;
   }
