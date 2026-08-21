@@ -462,16 +462,24 @@ const getAllComplaints = async (req, res) => {
   try {
     const complaints = await pool.query(`
       SELECT
-        complaints.id,
-        complaints.order_id,
-        complaints.description,
-        complaints.status,
-        complaints.created_at,
-        users.name AS customer_name
-      FROM complaints
-      JOIN users
-        ON complaints.user_id = users.id
-      ORDER BY complaints.created_at DESC
+    complaints.id,
+    complaints.order_id,
+    complaints.description,
+    complaints.status,
+    complaints.created_at,
+    customer.name AS customer_name,
+    cook_user.name AS cook_name,
+    cooks.id AS cook_id
+  FROM complaints
+  JOIN users customer
+    ON complaints.user_id = customer.id
+  JOIN orders
+    ON complaints.order_id = orders.id
+  JOIN cooks
+    ON orders.cook_id = cooks.id
+  JOIN users cook_user
+    ON cooks.user_id = cook_user.id
+  ORDER BY complaints.created_at DESC
     `);
     res.status(200).json({
       success: true,
@@ -569,6 +577,48 @@ const updateComplaintStatus = async (req, res) => {
     });
   }
 };
+const assignComplaintToCook = async(req,res)=>{
+  try{
+    const { id } = req.params;
+    const { cook_id } = req.body;
+    const complaint = await pool.query(
+      `SELECT id FROM complaints WHERE id = $1`,[id]
+    );
+    if(complaints.rows.length === 0){
+      return res.status(403).json({
+        success:false,
+        message:"Complaint not found"
+      });
+    }
+    const cook = await pool.query(
+      `SELECT id FROM cooks WHERE id = $1`,[cook_id]
+    );
+    if(cook.rows.length === 0){
+      return res.status(404).json({
+        success:false,
+        message:"Cook not found"
+      });
+    }
+    const updated = await pool.query(
+      `UPDATE complaints
+      SET cook_id = $1,
+      status='IN PROGRESS'
+      WHERE id = $2
+      RETURNING *`,[cook_id,id]
+    );
+    res.status(200).json({
+      success:true,
+      message:"Complaint assigned to the cook",
+      complaint:updated.rows[0]
+    });
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success:false,
+      message:"Server Error"
+    });
+  }
+};
 module.exports = {
   getDashboardStats,
   getPendingCooks,
@@ -583,5 +633,6 @@ module.exports = {
   updateCategory,
   getAllComplaints,
   getComplaintById,
-  updateComplaintStatus
+  updateComplaintStatus,
+  assignComplaintToCook
 };

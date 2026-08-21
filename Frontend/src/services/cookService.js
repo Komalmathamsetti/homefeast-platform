@@ -13,4 +13,8 @@ export const updateCookProfile = async(profileData)=>{
 export const getCookDashboard = async()=>{
   const response = await API.get("/cook-dashboard");
   return response.data;
-}
+};
+export const getMyComplaints = async()=>{
+  const response = await API.get("/cooks/comaplaints");
+  return response.data;
+};

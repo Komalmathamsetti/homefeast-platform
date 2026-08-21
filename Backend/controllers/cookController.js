@@ -145,8 +145,48 @@ const updateCookProfile = async (req, res) => {
       });
     }
 };
+const getMyComplaints = async (req, res) => {
+  try {
+    const cookUserId = req.user.userId;
+
+    const complaints = await pool.query(
+      `SELECT
+        complaints.id,
+        complaints.order_id,
+        complaints.description,
+        complaints.status,
+        complaints.created_at,
+
+        customer.name AS customer_name
+
+       FROM complaints
+
+       JOIN cooks
+         ON complaints.cook_id = cooks.id
+
+       JOIN users customer
+         ON complaints.user_id = customer.id
+
+       WHERE cooks.user_id = $1
+
+       ORDER BY complaints.created_at DESC`,
+      [cookUserId]
+    );
+    res.status(200).json({
+      success: true,
+      complaints: complaints.rows
+    });
+  } catch (error) {
+    console.log("Get Cook Complaints Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
 module.exports = {
     createcookProfile,
     getCookProfile,
-    updateCookProfile
+    updateCookProfile,
+    getMyComplaints
 };

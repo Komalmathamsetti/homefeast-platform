@@ -69,3 +69,10 @@ export const updateComplaintStatus = async (id, status) => {
   );
   return response.data;
 };
+export const assignComplaintToCook = async(id,cook_id)=>{
+  const response = await API.put(
+    `/admin/complaints/${id}/assign`,
+    { cook_id }
+  );
+  return response.data;
+};

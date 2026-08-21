@@ -224,7 +224,7 @@ Customer support
                       </div>
                     </div>
 
-                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    <div className="mt-5 grid gap-4 sm:grid-cols-3">
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Order ID
@@ -233,7 +233,14 @@ Customer support
                           {complaint.order_id || "Not available"}
                         </p>
                       </div>
-
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                          Cook 
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-700">
+                          {complaint.cook_name || "Not assigned"}
+                        </p>
+                      </div>
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                           Complaint date
@@ -331,29 +338,53 @@ Customer support
                 </div>
 
                 <div className="space-y-6 p-5 sm:p-6">
-                  <div className="flex items-center gap-3">
-                    {customerAvatar ? (
-                      <img
-                        src={customerAvatar}
-                        alt={customerName}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-700">
-                        {initials}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {/* Customer */}
+                    <div className="rounded-xl border border-slate-200 bg-white p-4">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                        Customer
+                      </p>
+                      <div className="mt-3 flex items-center gap-3">
+                        {customerAvatar ? (
+                          <img
+                          src={customerAvatar}
+                          alt={customerName}
+                          className="h-11 w-11 rounded-full object-cover"/>
+                        ) : (
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-700">
+                          {initials}
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold text-slate-900">
+                          {customerName}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Customer
+                        </p>
                       </div>
-                    )}
-
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        {customerName}
-                      </p>
-                      <p className="text-sm text-slate-500">
-                        Order {complaint.orderId || "Not available"}
-                      </p>
                     </div>
                   </div>
-
+                  {/* Cook */}
+                  <div className="rounded-xl border border-slate-200 bg-white p-4">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                      Assigned Cook
+                    </p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700">
+                        {complaint.cook_name ? complaint.cook_name.split(" ").map((name) => name[0]).join("").slice(0, 2).toUpperCase() : "NA"}
+                      </div>
+                    <div>
+                    <p className="font-semibold text-slate-900">
+                      {complaint.cook_name || "Not assigned"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {complaint.cook_id ? `Cook #${complaint.cook_id}` : "Awaiting assignment"}
+                    </p>
+                  </div>
+                </div>
+                </div>
+                </div>
                   <div className="grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
