@@ -15,3 +15,13 @@ export const getMyComplaints = async () => {
   const response = await API.get("/customer/complaints");
   return response.data;
 };
+export const createReview = async(reviewData)=>{
+    const response = await API.post("/customer/reviews",reviewData);
+    return response.data;
+};
+export const getCookReviews = async (cookId) => {
+  const response = await API.get(
+    `/api/customer/cook/${cookId}/reviews`
+  );
+  return response.data;
+};

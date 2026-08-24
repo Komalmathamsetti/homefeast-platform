@@ -3,34 +3,38 @@ import API from "../../services/api";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import { createReview } from "../../services/customerServices";
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [complaintOpen,setComplaintOpen] = useState(false);
-  const [selectedOrder,setSelectedOrder] = useState(null);
-  const [complaintDescription,setComplaintDescription] = useState("");
-  const [submittingComplaint,setSubmittingComplaint] = useState(false);
+  const [complaintOpen, setComplaintOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [complaintDescription, setComplaintDescription] = useState("");
+  const [submittingComplaint, setSubmittingComplaint] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewOrder, setReviewOrder] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const fetchOrders = async () => {
     try {
-        const response = await API.get("/orders/my");
-        console.log(response.data);
-        setOrders(response.data);
-    }
-    catch (error) {
-        console.log(error);
-        setError("Unable to load orders");
-    }
-    finally {
-        setLoading(false);
+      const response = await API.get("/orders/my");
+      console.log(response.data);
+      setOrders(response.data);
+    } catch (error) {
+      console.log(error);
+      setError("Unable to load orders");
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
     const loadOrders = async () => {
-        await fetchOrders();
+      await fetchOrders();
     };
     loadOrders();
-   }, []);
+  }, []);
   const getStatusClasses = (status) => {
     switch (status) {
       case "Pending":
@@ -61,27 +65,24 @@ export default function MyOrdersPage() {
     }
   };
   const handleCancelOrder = async (orderId) => {
-  const confirmCancel = await Swal.fire({
-    title: "Confirm Cancellation",
-    text: "Are you sure you want to cancel this order?",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Yes, cancel it!"
-  });
-  if (!confirmCancel.isConfirmed) return;
-  try {
-    await API.put(`/orders/cancel/${orderId}`);
-    toast.success("Order cancelled successfully.");
-    fetchOrders();
-  } catch (error) {
-    console.log(error);
-    toast.error(
-      error.response?.data?.message ||
-      "Unable to cancel order."
-    );
-  }
+    const confirmCancel = await Swal.fire({
+      title: "Confirm Cancellation",
+      text: "Are you sure you want to cancel this order?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, cancel it!",
+    });
+    if (!confirmCancel.isConfirmed) return;
+    try {
+      await API.put(`/orders/cancel/${orderId}`);
+      toast.success("Order cancelled successfully.");
+      fetchOrders();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Unable to cancel order.");
+    }
   };
   const openComplaint = (order) => {
     setSelectedOrder(order);
@@ -93,6 +94,44 @@ export default function MyOrdersPage() {
     setComplaintOpen(false);
     setSelectedOrder(null);
     setComplaintDescription("");
+  };
+  const openReview = (order) => {
+    setReviewOrder(order);
+    setRating(0);
+    setReviewComment("");
+    setReviewOpen(true);
+  };
+  const closeReview = () => {
+    if (submittingReview) return;
+    setReviewOpen(false);
+    setReviewOrder(false);
+    setRating(0);
+    setReviewComment("");
+  };
+  const handleReviewSubmit = async () => {
+    if (!reviewOrder) {
+      return;
+    }
+    if (rating < 1 || rating > 5) {
+      toast.error("Please select a valid Rating");
+      return;
+    }
+    try {
+      setSubmittingReview(true);
+      await createReview({
+        order_id: reviewOrder.id,
+        rating: rating,
+        comment: reviewComment.trim(),
+      });
+      toast.success("Review submitted successfully");
+      closeReview();
+      await fetchOrders();
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || "Unable to submit review");
+    } finally {
+      setSubmittingReview(false);
+    }
   };
   const handleComplaintSubmit = async () => {
     if (!complaintDescription.trim()) {
@@ -106,26 +145,26 @@ export default function MyOrdersPage() {
       setSubmittingComplaint(true);
       await API.post("/customer/complaints", {
         order_id: selectedOrder.id,
-        description: complaintDescription.trim()
+        description: complaintDescription.trim(),
       });
       toast.success("Complaint submitted successfully");
       closeComplaint();
     } catch (error) {
       console.log("Complaint submission error:", error);
       toast.error(
-        error.response?.data?.message || "Unable to submit complaint"
+        error.response?.data?.message || "Unable to submit complaint",
       );
     } finally {
       setSubmittingComplaint(false);
     }
   };
-  if(error){
-    return(
-    <div className="flex items-center justify-center min-h-screen">
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
         <h1 className="text-3xl font-bold text-red-500">{error}</h1>
-    </div>
+      </div>
     );
- }
+  }
   return (
     <div className="min-h-screen bg-linear-to-br from-white via-orange-50 to-orange-100 text-slate-900">
       <nav className="sticky top-0 z-20 border-b border-orange-100 bg-white/90 backdrop-blur">
@@ -141,7 +180,10 @@ export default function MyOrdersPage() {
               <p className="text-xs text-slate-500">Premium food dashboard</p>
             </div>
           </div>
-          <Link to='/customer/dashboard' className="text-sm font-medium text-slate-600 hover:text-orange-500">
+          <Link
+            to="/customer/dashboard"
+            className="text-sm font-medium text-slate-600 hover:text-orange-500"
+          >
             Back to Dashboard
           </Link>
         </div>
@@ -157,7 +199,8 @@ export default function MyOrdersPage() {
               My Orders
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600">
-              Track your meals, view delivery details, and manage active orders in one place.
+              Track your meals, view delivery details, and manage active orders
+              in one place.
             </p>
           </div>
 
@@ -165,7 +208,9 @@ export default function MyOrdersPage() {
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
               Total Orders
             </p>
-            <p className="mt-1 text-2xl font-bold text-slate-900">{orders.length}</p>
+            <p className="mt-1 text-2xl font-bold text-slate-900">
+              {orders.length}
+            </p>
           </div>
         </div>
 
@@ -203,15 +248,50 @@ export default function MyOrdersPage() {
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <rect x="52" y="52" width="136" height="96" rx="24" fill="currentColor" opacity="0.12" />
-              <rect x="70" y="74" width="100" height="12" rx="6" fill="currentColor" opacity="0.28" />
-              <rect x="70" y="98" width="72" height="12" rx="6" fill="currentColor" opacity="0.22" />
-              <circle cx="120" cy="150" r="18" fill="currentColor" opacity="0.18" />
-              <path d="M88 40h64l8 16H80l8-16Z" fill="currentColor" opacity="0.18" />
+              <rect
+                x="52"
+                y="52"
+                width="136"
+                height="96"
+                rx="24"
+                fill="currentColor"
+                opacity="0.12"
+              />
+              <rect
+                x="70"
+                y="74"
+                width="100"
+                height="12"
+                rx="6"
+                fill="currentColor"
+                opacity="0.28"
+              />
+              <rect
+                x="70"
+                y="98"
+                width="72"
+                height="12"
+                rx="6"
+                fill="currentColor"
+                opacity="0.22"
+              />
+              <circle
+                cx="120"
+                cy="150"
+                r="18"
+                fill="currentColor"
+                opacity="0.18"
+              />
+              <path
+                d="M88 40h64l8 16H80l8-16Z"
+                fill="currentColor"
+                opacity="0.18"
+              />
             </svg>
             <h2 className="text-2xl font-bold text-slate-900">No orders yet</h2>
             <p className="mt-2 max-w-md text-sm text-slate-600">
-              Your placed orders will appear here once you start ordering from HomeFeast.
+              Your placed orders will appear here once you start ordering from
+              HomeFeast.
             </p>
           </div>
         ) : (
@@ -231,21 +311,24 @@ export default function MyOrdersPage() {
                         {order.dish_name}
                       </h2>
                       <p className="mt-1 text-sm text-slate-600">
-                        Cooked by <span className="font-semibold text-slate-800">{order.cook_name}</span>
+                        Cooked by{" "}
+                        <span className="font-semibold text-slate-800">
+                          {order.cook_name}
+                        </span>
                       </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getMealTypeClasses(
-                          order.meal_type
+                          order.meal_type,
                         )}`}
                       >
                         {order.meal_type}
                       </span>
                       <span
                         className={`rounded-full px-3 py-1.5 text-xs font-semibold ${getStatusClasses(
-                          order.order_status
+                          order.order_status,
                         )}`}
                       >
                         {order.order_status}
@@ -258,7 +341,10 @@ export default function MyOrdersPage() {
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <InfoBlock label="Quantity" value={order.quantity} />
                     <InfoBlock label="Price" value={`₹${order.total_price}`} />
-                    <InfoBlock label="Ordered Date" value={new Date(order.order_date).toLocaleString()} />
+                    <InfoBlock
+                      label="Ordered Date"
+                      value={new Date(order.order_date).toLocaleString()}
+                    />
                     <InfoBlock
                       label="Delivery Address"
                       value={order.delivery_address}
@@ -279,120 +365,231 @@ export default function MyOrdersPage() {
                       </span>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">
+                      {order.order_status === "Delivered" && (
+                        <button
+                          onClick={() => openReview(order)}
+                          className="inline-flex w-full items-center justify-center rounded-2xl bg-yellow-50 px-6 py-4 text-sm font-bold text-yellow-700 ring-1 ring-yellow-200 transition hover:bg-yellow-100 sm:w-auto"
+                        >
+                          ⭐ Review Cook
+                        </button>
+                      )}
                       {/* Report Complaint */}
                       {order.order_status === "Delivered" && (
-                        <button onClick={() => openComplaint(order)}
-                        className="inline-flex w-full items-center justify-center rounded-2xl bg-red-50 px-6 py-4 text-sm font-bold text-red-600 ring-1 ring-red-100 transition hover:bg-red-100 sm:w-auto">
+                        <button
+                          onClick={() => openComplaint(order)}
+                          className="inline-flex w-full items-center justify-center rounded-2xl bg-red-50 px-6 py-4 text-sm font-bold text-red-600 ring-1 ring-red-100 transition hover:bg-red-100 sm:w-auto"
+                        >
                           Report an Issue
                         </button>
                       )}
                       {/* Cancel Order */}
-                      <button onClick={() => handleCancelOrder(order.id)} className={`inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-sm font-bold shadow-sm transition sm:w-auto ${
-                        order.order_status === "Delivered" ||
-                        order.order_status === "Cancelled" ? "cursor-not-allowed bg-gray-200 text-gray-500": "bg-orange-500 text-white hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-200"}`}
-                        disabled={ order.order_status === "Delivered" || order.order_status === "Cancelled"}>
-                         Cancel Order
+                      <button
+                        onClick={() => handleCancelOrder(order.id)}
+                        className={`inline-flex w-full items-center justify-center rounded-2xl px-6 py-4 text-sm font-bold shadow-sm transition sm:w-auto ${
+                          order.order_status === "Delivered" ||
+                          order.order_status === "Cancelled"
+                            ? "cursor-not-allowed bg-gray-200 text-gray-500"
+                            : "bg-orange-500 text-white hover:bg-orange-600 hover:shadow-lg hover:shadow-orange-200"
+                        }`}
+                        disabled={
+                          order.order_status === "Delivered" ||
+                          order.order_status === "Cancelled"
+                        }
+                      >
+                        Cancel Order
                       </button>
                     </div>
-                    </div>
+                  </div>
                 </div>
               </article>
             ))}
           </div>
         )}
         {complaintOpen && selectedOrder && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-orange-100 px-6 py-5">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Report an Issue
+                  </h2>
 
-    <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
+                  <p className="mt-1 text-sm text-slate-500">
+                    Order #{selectedOrder.id}
+                  </p>
+                </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-orange-100 px-6 py-5">
+                <button
+                  onClick={closeComplaint}
+                  disabled={submittingComplaint}
+                  className="rounded-xl px-3 py-2 text-xl text-slate-400 hover:bg-gray-100 hover:text-slate-700"
+                >
+                  ×
+                </button>
+              </div>
 
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">
-            Report an Issue
-          </h2>
+              {/* Body */}
+              <div className="px-6 py-6">
+                <div className="mb-5 rounded-2xl bg-orange-50 p-4 ring-1 ring-orange-100">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
+                    Order
+                  </p>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Order #{selectedOrder.id}
-          </p>
-        </div>
+                  <p className="mt-1 font-bold text-slate-900">
+                    {selectedOrder.dish_name}
+                  </p>
 
-        <button
-          onClick={closeComplaint}
-          disabled={submittingComplaint}
-          className="rounded-xl px-3 py-2 text-xl text-slate-400 hover:bg-gray-100 hover:text-slate-700"
-        >
-          ×
-        </button>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Cooked by {selectedOrder.cook_name}
+                  </p>
+                </div>
 
-      </div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                  Describe your issue
+                </label>
 
-      {/* Body */}
-      <div className="px-6 py-6">
+                <textarea
+                  value={complaintDescription}
+                  onChange={(e) => setComplaintDescription(e.target.value)}
+                  rows={5}
+                  placeholder="Please describe what went wrong..."
+                  className="w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
 
-        <div className="mb-5 rounded-2xl bg-orange-50 p-4 ring-1 ring-orange-100">
+                <p className="mt-2 text-xs text-slate-400">
+                  Please provide enough details so the admin can investigate the
+                  issue.
+                </p>
+              </div>
 
-          <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
-            Order
-          </p>
+              {/* Footer */}
+              <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button
+                  onClick={closeComplaint}
+                  disabled={submittingComplaint}
+                  className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
 
-          <p className="mt-1 font-bold text-slate-900">
-            {selectedOrder.dish_name}
-          </p>
+                <button
+                  onClick={handleComplaintSubmit}
+                  disabled={submittingComplaint}
+                  className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submittingComplaint ? "Submitting..." : "Submit Complaint"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {reviewOpen && reviewOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-orange-100 px-6 py-5">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    Review Your Order
+                  </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Cooked by {selectedOrder.cook_name}
-          </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Order #{reviewOrder.id}
+                  </p>
+                </div>
 
-        </div>
+                <button
+                  onClick={closeReview}
+                  disabled={submittingReview}
+                  className="rounded-xl px-3 py-2 text-xl text-slate-400 hover:bg-gray-100 hover:text-slate-700"
+                >
+                  ×
+                </button>
+              </div>
 
-        <label className="mb-2 block text-sm font-semibold text-slate-700">
-          Describe your issue
-        </label>
+              {/* Body */}
+              <div className="px-6 py-6">
+                {/* Order Information */}
+                <div className="mb-6 rounded-2xl bg-orange-50 p-4 ring-1 ring-orange-100">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-orange-600">
+                    Order
+                  </p>
 
-        <textarea
-          value={complaintDescription}
-          onChange={(e) =>
-            setComplaintDescription(e.target.value)
-          }
-          rows={5}
-          placeholder="Please describe what went wrong..."
-          className="w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-        />
+                  <p className="mt-1 font-bold text-slate-900">
+                    {reviewOrder.dish_name}
+                  </p>
 
-        <p className="mt-2 text-xs text-slate-400">
-          Please provide enough details so the admin can investigate the issue.
-        </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Cooked by {reviewOrder.cook_name}
+                  </p>
+                </div>
 
-      </div>
+                {/* Rating */}
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    How was your experience?
+                  </p>
 
-      {/* Footer */}
-      <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                  <div className="mt-3 flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`text-4xl transition ${
+                          star <= rating ? "text-yellow-400" : "text-gray-300"
+                        }`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
 
-        <button
-          onClick={closeComplaint}
-          disabled={submittingComplaint}
-          className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-gray-50"
-        >
-          Cancel
-        </button>
+                  {rating > 0 && (
+                    <p className="mt-2 text-sm text-slate-500">
+                      {rating} out of 5
+                    </p>
+                  )}
+                </div>
 
-        <button
-          onClick={handleComplaintSubmit}
-          disabled={submittingComplaint}
-          className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {submittingComplaint
-            ? "Submitting..."
-            : "Submit Complaint"}
-        </button>
+                {/* Comment */}
+                <div className="mt-6">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    Your Review
+                  </label>
 
-      </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    rows={5}
+                    placeholder="Tell us about your experience..."
+                    className="w-full resize-none rounded-2xl border border-gray-200 px-4 py-3 text-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  />
+                </div>
+              </div>
 
-    </div>
-  </div>
-  )}
+              {/* Footer */}
+              <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button
+                  onClick={closeReview}
+                  disabled={submittingReview}
+                  className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleReviewSubmit}
+                  disabled={submittingReview || rating === 0}
+                  className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -400,7 +597,9 @@ export default function MyOrdersPage() {
 
 function InfoBlock({ label, value, span = "" }) {
   return (
-    <div className={`rounded-2xl bg-orange-50/60 p-4 ring-1 ring-orange-100 ${span}`}>
+    <div
+      className={`rounded-2xl bg-orange-50/60 p-4 ring-1 ring-orange-100 ${span}`}
+    >
       <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
         {label}
       </p>

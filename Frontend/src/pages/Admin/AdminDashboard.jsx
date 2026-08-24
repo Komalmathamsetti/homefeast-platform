@@ -12,6 +12,7 @@ import AdminSubscriptions from "./AdminSubscriptions";
 import CuisinesAndCategories from "./CuisinesAndCategories";
 import ComplaintsAndDisputes from "./Complaints";
 const NAV = [
+  { label: "Home", icon: "🏠" },
   { label: "Dashboard", icon: "📊" },
   { label: "Users & Cooks", icon: "👥" },
   { label: "Cook Approvals", icon: "👨‍🍳" },
@@ -91,7 +92,10 @@ export default function AdminDashboard() {
   }, []);
   const handleNavigation = (label) => {
     setSidebarOpen(false);
-
+    if(label === "Home"){
+      navigate("/");
+      return;
+    }
     if (label === "Logout") {
       setActive("Logout");
       return;
@@ -387,7 +391,7 @@ export default function AdminDashboard() {
           )}
             {/* ================= OTHER PAGES ================= */}
             {active !== "Dashboard" && active !== "Cook Approvals" && active !== "Logout" && active !== "Users & Cooks" && active !== "Orders" &&
-             active !== "Subscriptions" && active !== "Categories & Cuisines" && (
+             active !== "Subscriptions" && active !== "Categories & Cuisines" &&  active !== "Complaints & Disputes" &&(
              <div className="flex min-h-125 items-center justify-center">
               <div className="rounded-3xl border border-orange-100 bg-white p-10 text-center shadow-sm">
                 <div className="text-5xl">🚧</div>
