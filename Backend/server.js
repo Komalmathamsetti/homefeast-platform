@@ -13,6 +13,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const cookDashboardRoutes = require("./routes/cookDashboardRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -27,6 +28,7 @@ app.use("/api/subscriptions",subscriptions);
 app.use("/api/orders",orderRoutes);
 app.use("/api/reviews",reviewRoutes);
 app.use("/api/admin",adminRoutes);
+app.use("/api/notifications",notificationRoutes);
 app.get("/", async (req, res) => {
   res.send("Homefeast API is running");
 });
