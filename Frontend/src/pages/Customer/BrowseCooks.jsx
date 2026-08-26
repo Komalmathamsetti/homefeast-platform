@@ -28,7 +28,13 @@ function CookCard({ cook }) {
           <p className="text-gray-700">🕒 {cook.delivery_timings}</p>
           <p className="text-gray-500">{cook.bio}</p>
         </div>
-        <div className="mb-5 text-yellow-500 font-semibold">⭐ {cook.rating}</div>
+        <div className="mb-5 flex items-center gap-2 text-yellow-500 font-semibold">
+          <span>⭐</span>
+          <span>{Number(cook.average_rating || 0).toFixed(1)}</span>
+          <span className="text-sm font-normal text-gray-500">
+            ({cook.review_count || 0} reviews)
+          </span>
+        </div>
 
         <Link to={`/cook/${cook.id}`} className="block w-full rounded-2xl bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600">
           View Profile
