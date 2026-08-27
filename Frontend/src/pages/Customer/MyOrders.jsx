@@ -30,10 +30,19 @@ export default function MyOrdersPage() {
     }
   };
   useEffect(() => {
-    const loadOrders = async () => {
-      await fetchOrders();
-    };
+     const loadOrders = async () => {
+    await fetchOrders();
+  };
+
+  const interval = setInterval(() => {
     loadOrders();
+  }, 5000);
+
+  loadOrders();
+
+  return () => {
+    clearInterval(interval);
+  };
   }, []);
   const getStatusClasses = (status) => {
     switch (status) {

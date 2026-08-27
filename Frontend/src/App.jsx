@@ -18,6 +18,7 @@ import AdminSubscriptions from "./pages/Admin/AdminSubscriptions";
 import CuisinesAndCategories from "./pages/Admin/CuisinesAndCategories";
 import ComplaintsAndDisputes from "./pages/Admin/Complaints";
 import MyComplaints from "./pages/Customer/MyComplaints";
+import NotificationBell from "./components/Notificationbell";
 function App(){
   return(
     <>
@@ -33,7 +34,7 @@ function App(){
       <Route path="/login" element={<Login />} />
 
       <Route path="/register" element={<Register />} />
-
+      <Route path="/notifications" element={<NotificationBell/>}/>
       <Route
         path="/customer/dashboard"
         element={

@@ -1,5 +1,5 @@
-import { useState,useEffect } from "react";
-import {useNavigate} from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CookEarnings from "./CookEarnings";
 import CookMenu from "./CookMenu";
 import CookOrders from "./CookOrders";
@@ -10,6 +10,7 @@ import CookHome from "./CookHome";
 import { getCookDashboard } from "../../services/cookService";
 import Swal from "sweetalert2";
 import CookComplaints from "./CookComplaints";
+import NotificationBell from "../../components/Notificationbell";
 const NAV = [
   { label: "Home", icon: "🏠" },
   { label: "Dashboard", icon: "📊" },
@@ -18,122 +19,116 @@ const NAV = [
   { label: "Subscriptions", icon: "📋" },
   { label: "Orders", icon: "🛒" },
   { label: "Earnings", icon: "💰" },
-  { label: "Complaints",icon: "⚠️"},
+  { label: "Complaints", icon: "⚠️" },
   { label: "Logout", icon: "🚪" },
 ];
 export default function CookDashboard() {
   const [active, setActive] = useState("Dashboard");
-  const [selectedMeal,setSelectedMeal] = useState(null);
-  const [refreshMenu,setRefreshMenu] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState(null);
+  const [refreshMenu, setRefreshMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loading,setLoading] = useState(true);
-  const [dashboard,setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dashboard, setDashboard] = useState(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const loadDashboard = async () => {
-    try{
-      const response=await getCookDashboard();
+    try {
+      const response = await getCookDashboard();
       setDashboard(response);
-    }catch(error){
+    } catch (error) {
       console.log(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
-  useEffect(()=>{
-    const load = async()=>{
+  useEffect(() => {
+    const load = async () => {
       await loadDashboard();
       setLoading(false);
     };
     load();
-  },[]);
+  }, []);
   const renderPage = () => {
-  switch (active) {
-   case "Dashboard":
-    if (!dashboard) {
-        return (
+    switch (active) {
+      case "Dashboard":
+        if (!dashboard) {
+          return (
             <div className="flex justify-center items-center h-screen">
-                Loading Dashboard...
+              Loading Dashboard...
             </div>
-        );
-    }
-    return (
-        <CookHome
-            dashboard={dashboard}
+          );
+        }
+        return <CookHome dashboard={dashboard} setActive={setActive} />;
+      case "Profile":
+        return <CookProfile />;
+      case "My Menu":
+        return (
+          <CookMenu
             setActive={setActive}
-        />
-    );
-    case "Profile":
-      return <CookProfile />;
-    case "My Menu":
-      return (
-        <CookMenu
-          setActive={setActive}
-          setSelectedMeal={setSelectedMeal}
-          refreshMenu={refreshMenu}
-        />
-      );
-    case "Add Meal":
-      return (
-        <AddMealForm
-          setActive={setActive}
-          selectedMeal={null}
-          setRefreshMenu={setRefreshMenu}
-        />
-      );
-    case "Edit Meal":
-      return (
-        <AddMealForm
-          setActive={setActive}
-          selectedMeal={selectedMeal}
-          setRefreshMenu={setRefreshMenu}
-        />
-      );
-    case "Orders":
-      return <CookOrders 
-      refreshDashboard = {loadDashboard}/>;
-    case "Subscriptions":
-      return <CookSubscriptions />;
-    case "Earnings":
-      return <CookEarnings />;
-    case "Complaints":
-      return <CookComplaints/>;
-    default:
-      return null;
-  }
+            setSelectedMeal={setSelectedMeal}
+            refreshMenu={refreshMenu}
+          />
+        );
+      case "Add Meal":
+        return (
+          <AddMealForm
+            setActive={setActive}
+            selectedMeal={null}
+            setRefreshMenu={setRefreshMenu}
+          />
+        );
+      case "Edit Meal":
+        return (
+          <AddMealForm
+            setActive={setActive}
+            selectedMeal={selectedMeal}
+            setRefreshMenu={setRefreshMenu}
+          />
+        );
+      case "Orders":
+        return <CookOrders refreshDashboard={loadDashboard} />;
+      case "Subscriptions":
+        return <CookSubscriptions />;
+      case "Earnings":
+        return <CookEarnings />;
+      case "Complaints":
+        return <CookComplaints />;
+      default:
+        return null;
+    }
   };
   const handleLogout = async () => {
     const result = await Swal.fire({
-        title: "Logout?",
-        text: "Are you sure you want to logout?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "Yes, Logout",
-        cancelButtonText: "Cancel",
-        confirmButtonColor: "#f97316",
-        cancelButtonColor: "#6b7280",
-        reverseButtons: true
+      title: "Logout?",
+      text: "Are you sure you want to logout?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Logout",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#f97316",
+      cancelButtonColor: "#6b7280",
+      reverseButtons: true,
     });
     if (!result.isConfirmed) return;
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     await Swal.fire({
-        title: "Logged Out!",
-        text: "You have been logged out successfully.",
-        icon: "success",
-        timer: 1500,
-        showConfirmButton: false
+      title: "Logged Out!",
+      text: "You have been logged out successfully.",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
     });
     navigate("/");
   };
-  if(loading){
-    return(
+  if (loading) {
+    return (
       <div className="flex justify-center items-center h-screen">
         <h1 className="text-3xl font-bold text-orange-500">
           Loading Dashboard...
         </h1>
       </div>
-    )
+    );
   }
   return (
     <div className="flex h-screen bg-amber-50 font-sans overflow-hidden">
@@ -157,20 +152,22 @@ export default function CookDashboard() {
           {NAV.map(({ label, icon }) => (
             <button
               key={label}
-              onClick={() => { 
-                setSidebarOpen(false); 
-                if(label === "Home"){
+              onClick={() => {
+                setSidebarOpen(false);
+                if (label === "Home") {
                   navigate("/");
-                }else if(label === "Logout"){
+                } else if (label === "Logout") {
                   setActive("Logout");
                   return;
                 }
                 setActive(label);
               }}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition
-                ${active === label
-                  ? "bg-amber-500 text-white"
-                  : "text-gray-600 hover:bg-amber-50 hover:text-amber-600"}`}
+                ${
+                  active === label
+                    ? "bg-amber-500 text-white"
+                    : "text-gray-600 hover:bg-amber-50 hover:text-amber-600"
+                }`}
             >
               <span className="text-lg">{icon}</span>
               {label}
@@ -180,9 +177,13 @@ export default function CookDashboard() {
 
         <div className="px-6 py-4 border-t border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-amber-200 flex items-center justify-center text-amber-700 font-bold text-sm">{user?.name?user?.name.charAt(0).toUpperCase():"U"}</div>
+            <div className="w-9 h-9 rounded-full bg-amber-200 flex items-center justify-center text-amber-700 font-bold text-sm">
+              {user?.name ? user?.name.charAt(0).toUpperCase() : "U"}
+            </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{user?.name||"Cook"}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {user?.name || "Cook"}
+              </p>
               <p className="text-xs text-gray-400">Cook</p>
             </div>
           </div>
@@ -192,27 +193,55 @@ export default function CookDashboard() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
-          <button
-            className="md:hidden text-gray-500 hover:text-amber-500"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <h2 className="text-lg font-semibold text-gray-800">{active}</h2>
-          <span className="text-sm text-gray-400 hidden sm:block">Welcome Back,{user?.name || "Cook"} 👩‍🍳</span>
-        </header>
+          {/* Left side */}
+          <div className="flex items-center gap-4">
+            <button
+              className="md:hidden text-gray-500 hover:text-amber-500"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
 
+            <h2 className="text-lg font-semibold text-gray-800">{active}</h2>
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-400 hidden sm:block">
+              Welcome Back, {user?.name || "Cook"} 👩‍🍳
+            </span>
+
+            <NotificationBell />
+          </div>
+        </header>
         <main className="flex-1 overflow-y-auto p-6">
           {renderPage()}
           {active === "Logout" && (
             <div className="flex items-center justify-center h-full">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center max-w-sm w-full">
                 <p className="text-4xl mb-4">👋</p>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">Leaving so soon?</h3>
-                <p className="text-sm text-gray-400 mb-6">You'll be logged out of your HomeFeast cook account.</p>
-                <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition">
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  Leaving so soon?
+                </h3>
+                <p className="text-sm text-gray-400 mb-6">
+                  You'll be logged out of your HomeFeast cook account.
+                </p>
+                <button
+                  onClick={handleLogout}
+                  className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition"
+                >
                   Confirm Logout
                 </button>
                 <button

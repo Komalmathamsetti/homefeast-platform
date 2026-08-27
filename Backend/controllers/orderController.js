@@ -1,40 +1,81 @@
 const pool = require("../db");
- 
-const placeOrder = async(req,res)=>{
-    try{
-        const userId = req.user.userId;
-        const { menu_id, quantity, delivery_address, special_instructions } = req.body;
-        if (quantity <= 0) {
-           return res.status(400).json({message: "Quantity must be at least 1"});
-        }
-        const menu = await pool.query(
-            `SELECT * FROM menus WHERE id = $1`,[menu_id]
-        );
-        if(menu.rows.length === 0){
-            return res.status(404).json({message: "Menu not found"});
-        }
-        if (!menu.rows[0].availability) {
-            return res.status(400).json({message: "This meal is currently unavailable"});
-        }
-        const totalPrice = Number(menu.rows[0].price)*Number(quantity);
-        const order = await pool.query(
-            `INSERT INTO orders
-            (user_id,cook_id,menu_id,quantity,total_price,delivery_address,special_instructions)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)
-            RETURNING *`,
-            [userId,menu.rows[0].cook_id,menu_id,quantity,totalPrice,delivery_address,special_instructions]
-        );
-        res.status(201).json({message:"Order Placed",order:order.rows[0]});
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message:"Server Error"});
+const { createNotification } = require("../services/notificationServices");
+const placeOrder = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { menu_id, quantity, delivery_address, special_instructions } =
+      req.body;
+    if (quantity <= 0) {
+      return res.status(400).json({ message: "Quantity must be at least 1" });
     }
+    const menu = await pool.query(`SELECT * FROM menus WHERE id = $1`, [
+      menu_id,
+    ]);
+    if (menu.rows.length === 0) {
+      return res.status(404).json({ message: "Menu not found" });
+    }
+    if (!menu.rows[0].availability) {
+      return res
+        .status(400)
+        .json({ message: "This meal is currently unavailable" });
+    }
+    const totalPrice = Number(menu.rows[0].price) * Number(quantity);
+    const order = await pool.query(
+      `INSERT INTO orders
+    (
+        user_id,
+        cook_id,
+        menu_id,
+        quantity,
+        total_price,
+        delivery_address,
+        special_instructions
+    )
+    VALUES ($1,$2,$3,$4,$5,$6,$7)
+    RETURNING *`,
+      [
+        userId,
+        menu.rows[0].cook_id,
+        menu_id,
+        quantity,
+        totalPrice,
+        delivery_address,
+        special_instructions,
+      ],
+    );
+    const createdOrder = order.rows[0];
+    const cook = await pool.query(
+      `
+    SELECT user_id
+    FROM cooks
+    WHERE id = $1
+    `,
+      [createdOrder.cook_id],
+    );
+    if (cook.rows.length > 0) {
+      const cookUserId = cook.rows[0].user_id;
+      await createNotification({
+        userId: cookUserId,
+        title: "New Order",
+        message: `You received a new order #${createdOrder.id}.`,
+        type: "ORDER",
+        relatedId: createdOrder.id,
+      });
+    }
+    res.status(201).json({
+      message: "Order Placed",
+      order: createdOrder,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
-const getMyOrders = async(req,res)=>{
-    try{
-       const userId = req.user.userId;
-       const orders = await pool.query(
-        `SELECT
+const getMyOrders = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const orders = await pool.query(
+      `SELECT
         orders.id,
         orders.quantity,
         orders.total_price,
@@ -55,33 +96,33 @@ const getMyOrders = async(req,res)=>{
         JOIN users
         ON cooks.user_id = users.id
         WHERE orders.user_id = $1
-        ORDER BY orders.order_date DESC;`,[userId]
-       );
-       res.status(200).json(orders.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({message:"Server Error"});
-    }
+        ORDER BY orders.order_date DESC;`,
+      [userId],
+    );
+    res.status(200).json(orders.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
+  }
 };
-const getCookOrders = async(req,res)=>{
-    try{
+const getCookOrders = async (req, res) => {
+  try {
+    const userId = req.user.userId;
 
-        const userId = req.user.userId;
-
-        const cook = await pool.query(
-            `SELECT * FROM cooks
+    const cook = await pool.query(
+      `SELECT * FROM cooks
              WHERE user_id = $1`,
-            [userId]
-        );
+      [userId],
+    );
 
-        if(cook.rows.length === 0){
-            return res.status(404).json({
-                message: "Cook profile not found"
-            });
-        }
+    if (cook.rows.length === 0) {
+      return res.status(404).json({
+        message: "Cook profile not found",
+      });
+    }
 
-        const orders = await pool.query(
-            `SELECT
+    const orders = await pool.query(
+      `SELECT
             orders.id,
             orders.quantity,
             orders.total_price,
@@ -101,165 +142,245 @@ const getCookOrders = async(req,res)=>{
             ON orders.menu_id = menus.id
             WHERE orders.cook_id = $1
             ORDER BY orders.order_date DESC`,
-            [cook.rows[0].id]
-        );
-        res.status(200).json(orders.rows);
-    }catch(error){
-        console.log(error);
-        res.status(500).json({
-            message: "Server Error"
-        });
-    }
+      [cook.rows[0].id],
+    );
+    res.status(200).json(orders.rows);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
 const updateOrderStatus = async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const orderId = req.params.id;
-        const { status } = req.body;
-        const cook = await pool.query(
-            `SELECT * FROM cooks
-            WHERE user_id = $1`,[userId]
-        );
-        if(cook.rows.length === 0){
-            return res.status(403).json({
-                message:"Cook Not found"
-            });
-        }
-        const order = await pool.query(
-            `SELECT * FROM orders
+  try {
+    const userId = req.user.userId;
+    const orderId = req.params.id;
+    const { status } = req.body;
+
+    // Find cook
+    const cook = await pool.query(
+      `SELECT *
+             FROM cooks
+             WHERE user_id = $1`,
+      [userId],
+    );
+
+    if (cook.rows.length === 0) {
+      return res.status(403).json({
+        message: "Cook Not found",
+      });
+    }
+
+    const cookId = cook.rows[0].id;
+
+    // Find order belonging to this cook
+    const order = await pool.query(
+      `SELECT *
+             FROM orders
              WHERE id = $1
              AND cook_id = $2`,
-            [orderId,cook.rows[0].id]
-        );
-        if (order.rows.length === 0) {
-            return res.status(404).json({
-                message: "Order not found"
-            });
-        }
-        const validateStatuses = [
-            "Pending",
-            "Preparing",
-            "Ready",
-            "Delivered"
-        ];
-        if(!validateStatuses.includes(status)){
-            return res.status(403).json({
-                message:"Invalid Status"
-            });
-        }
-        let updatedOrder;
-        if (status === "Delivered") {
-            updatedOrder = await pool.query(
-                `UPDATE orders
-                SET order_status = $1,
-                delivered_at = CURRENT_TIMESTAMP
-                WHERE id = $2
-                RETURNING *`,
-                [status, orderId]
-            );
-        } else {
-            updatedOrder = await pool.query(
-                `UPDATE orders
-                SET order_status = $1
-                WHERE id = $2
-                RETURNING *`,
-                [status, orderId]
-            );
-}
-        res.status(200).json({
-            message: "Order updated",
-            order: updatedOrder.rows[0]
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Server Error"
-        });
+      [orderId, cookId],
+    );
+
+    if (order.rows.length === 0) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
     }
+
+    const validateStatuses = ["Pending", "Preparing", "Ready", "Delivered"];
+
+    if (!validateStatuses.includes(status)) {
+      return res.status(403).json({
+        message: "Invalid Status",
+      });
+    }
+
+    // Update order
+    let updatedOrder;
+
+    if (status === "Delivered") {
+      updatedOrder = await pool.query(
+        `UPDATE orders
+                 SET
+                    order_status = $1,
+                    delivered_at = CURRENT_TIMESTAMP
+                 WHERE id = $2
+                 RETURNING *`,
+        [status, orderId],
+      );
+    } else {
+      updatedOrder = await pool.query(
+        `UPDATE orders
+                 SET order_status = $1
+                 WHERE id = $2
+                 RETURNING *`,
+        [status, orderId],
+      );
+    }
+
+    const finalOrder = updatedOrder.rows[0];
+
+    // =====================================================
+    // CUSTOMER NOTIFICATION
+    // =====================================================
+
+    let title = "";
+    let message = "";
+
+    if (status === "Preparing") {
+      title = "Order Being Prepared";
+
+      message = `Your order #${orderId} is now being prepared.`;
+    } else if (status === "Ready") {
+      title = "Order Ready";
+
+      message = `Your order #${orderId} is ready for delivery.`;
+    } else if (status === "Delivered") {
+      title = "Order Delivered";
+
+      message = `Your order #${orderId} has been delivered.`;
+    }
+
+    // Send notification only when there is a message
+    if (title && message) {
+      await createNotification({
+        userId: finalOrder.user_id,
+
+        title: title,
+
+        message: message,
+
+        type: "ORDER",
+
+        relatedId: finalOrder.id,
+      });
+    }
+
+    res.status(200).json({
+      message: "Order updated",
+      order: finalOrder,
+    });
+  } catch (error) {
+    console.log("Update Order Status Error:", error);
+
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
 const cancelOrder = async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const orderId = req.params.id;
-        const order = await pool.query(
-            `SELECT * FROM orders
+  try {
+    const userId = req.user.userId;
+    const orderId = req.params.id;
+    const order = await pool.query(
+      `SELECT * FROM orders
              WHERE id = $1
              AND user_id = $2`,
-            [orderId, userId]
-        );
-        if (order.rows.length === 0) {
-            return res.status(404).json({
-                message: "Order not found"
-            });
-        }
-        if (
-            order.rows[0].order_status === "Delivered"
-        ) {
-            return res.status(400).json({
-                message: "Delivered orders cannot be cancelled"
-            });
-        }
-        const cancelled = await pool.query(
-            `UPDATE orders
+      [orderId, userId],
+    );
+    if (order.rows.length === 0) {
+      return res.status(404).json({
+        message: "Order not found",
+      });
+    }
+    if (order.rows[0].order_status === "Delivered") {
+      return res.status(400).json({
+        message: "Delivered orders cannot be cancelled",
+      });
+    }
+    const cancelled = await pool.query(
+      `UPDATE orders
              SET order_status = 'Cancelled'
              WHERE id = $1
              RETURNING *`,
-            [orderId]
-        );
-        res.status(200).json({
-            message: "Order Cancelled",
-            order: cancelled.rows[0]
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            message: "Server Error"
-        });
+      [orderId],
+    );
+    const cancelledOrder = cancelled.rows[0];
+
+    const cook = await pool.query(
+      `
+    SELECT user_id
+    FROM cooks
+    WHERE id = $1
+    `,
+      [cancelledOrder.cook_id],
+    );
+
+    if (cook.rows.length > 0) {
+      const cookUserId = cook.rows[0].user_id;
+      await createNotification({
+        userId: cookUserId,
+
+        title: "Order Cancelled",
+
+        message: `Order #${orderId} has been cancelled by the customer.`,
+
+        type: "ORDER",
+
+        relatedId: orderId,
+      });
     }
+    res.status(200).json({
+      message: "Order Cancelled",
+      order: cancelled.rows[0],
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: "Server Error",
+    });
+  }
 };
-const getCookEarnings = async(req,res)=>{
-    try{
-      const userId = req.user.userId;
-      const cook = await pool.query(
-        `SELECT * FROM cooks
-        WHERE user_id = $1`,[userId]
-      );
-      if(cook.rows.length === 0){
-        return res.status(400).json({
-            success:false,
-            message:"Cook Not Found"
-        });
-      }
-      const cookId = cook.rows[0].id;
-      const today = await pool.query(
-        `SELECT COALESCE(SUM(total_price),0) AS total
+const getCookEarnings = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const cook = await pool.query(
+      `SELECT * FROM cooks
+        WHERE user_id = $1`,
+      [userId],
+    );
+    if (cook.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cook Not Found",
+      });
+    }
+    const cookId = cook.rows[0].id;
+    const today = await pool.query(
+      `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
         AND order_status='Delivered'
-        AND DATE(delivered_at)=CURRENT_DATE`,[cookId]
-      );
-      const weekly = await pool.query(
-        `SELECT COALESCE(SUM(total_price),0) AS total
+        AND DATE(delivered_at)=CURRENT_DATE`,
+      [cookId],
+    );
+    const weekly = await pool.query(
+      `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
         AND order_status = 'Delivered'
-        AND delivered_at >= CURRENT_DATE - INTERVAL '7 days'`,[cookId]
-      );
-      const monthly = await pool.query(
-        `SELECT COALESCE(SUM(total_price),0) AS total
+        AND delivered_at >= CURRENT_DATE - INTERVAL '7 days'`,
+      [cookId],
+    );
+    const monthly = await pool.query(
+      `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
         AND order_status = 'Delivered'
-        AND DATE_TRUNC('month',delivered_at) = DATE_TRUNC('month',CURRENT_DATE)`,[cookId]
-      );
-      const lifetime = await pool.query(
-        `SELECT COALESCE(SUM(total_price),0) AS total
+        AND DATE_TRUNC('month',delivered_at) = DATE_TRUNC('month',CURRENT_DATE)`,
+      [cookId],
+    );
+    const lifetime = await pool.query(
+      `SELECT COALESCE(SUM(total_price),0) AS total
         FROM orders
         WHERE cook_id = $1
-        AND order_status = 'Delivered'`,[cookId]
-      );
-      const transactions = await pool.query(
-        `SELECT 
+        AND order_status = 'Delivered'`,
+      [cookId],
+    );
+    const transactions = await pool.query(
+      `SELECT 
         orders.id,
         orders.delivered_at,
         orders.total_price,
@@ -269,31 +390,32 @@ const getCookEarnings = async(req,res)=>{
         JOIN users 
         ON orders.user_id = users.id
         WHERE orders.cook_id = $1
-        ORDER BY orders.delivered_at DESC NULLS LAST`,[cookId]
-      );
-      res.status(200).json({
-        success:true,
-        summary:{
-            today:today.rows[0].total,
-            weekly:weekly.rows[0].total,
-            monthly:monthly.rows[0].total,
-            lifetime:lifetime.rows[0].total
-        },
-        transactions:transactions.rows
+        ORDER BY orders.delivered_at DESC NULLS LAST`,
+      [cookId],
+    );
+    res.status(200).json({
+      success: true,
+      summary: {
+        today: today.rows[0].total,
+        weekly: weekly.rows[0].total,
+        monthly: monthly.rows[0].total,
+        lifetime: lifetime.rows[0].total,
+      },
+      transactions: transactions.rows,
     });
-    }catch(error){
-        console.log(error);
-        return res.status(500).json({
-            success:false,
-            message:"Server Error"
-        });
-    }
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
 };
 module.exports = {
-    placeOrder,
-    getMyOrders,
-    getCookOrders,
-    updateOrderStatus,
-    cancelOrder,
-    getCookEarnings
+  placeOrder,
+  getMyOrders,
+  getCookOrders,
+  updateOrderStatus,
+  cancelOrder,
+  getCookEarnings,
 };
