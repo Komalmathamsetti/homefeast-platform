@@ -126,7 +126,6 @@ const updateCookProfile = async (req, res) => {
 const getMyComplaints = async (req, res) => {
   try {
     const cookUserId = req.user.userId;
-    console.log("Logged in cook user ID:", cookUserId);
     const complaints = await pool.query(
       `SELECT
         complaints.id,
