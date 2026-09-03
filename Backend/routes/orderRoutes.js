@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
+const verifyCookApproved = require("../middleware/cookApprovalMiddleware");
 const {placeOrder,getMyOrders,getCookOrders,updateOrderStatus,cancelOrder,getCookEarnings} = require("../controllers/orderController");
 router.post(
 "/",
@@ -21,6 +22,7 @@ router.get(
 "/cook",
 verifyToken,
 authorizeRole("cook"),
+verifyCookApproved,
 getCookOrders
 );
 
@@ -28,6 +30,7 @@ router.put(
 "/:id/status",
 verifyToken,
 authorizeRole("cook"),
+verifyCookApproved,
 updateOrderStatus
 );
 router.put(
@@ -39,6 +42,7 @@ router.get(
     "/earnings",
     verifyToken,
     authorizeRole("cook"),
+    verifyCookApproved,
     getCookEarnings
 );
 

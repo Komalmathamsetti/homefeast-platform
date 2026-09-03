@@ -18,6 +18,10 @@ export const getMyComplaints = async()=>{
   const response = await API.get("/cooks/complaints");
   return response.data;
 };
+export const getCookApprovalStatus = async()=>{
+  const response = await API.get("/cooks/approval-status");
+  return response.data;
+};
 export const respondToComplaint = async (
   complaintId,
   message

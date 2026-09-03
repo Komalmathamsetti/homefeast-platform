@@ -3,5 +3,6 @@ const router = express.Router();
 const { getCookDashboard } = require("../controllers/dashboardController");
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
-router.get("/",verifyToken,authorizeRole("cook"),getCookDashboard);
+const verifyCookApproved = require("../middleware/cookApprovalMiddleware");
+router.get("/",verifyToken,authorizeRole("cook"),verifyCookApproved,getCookDashboard);
 module.exports = router;

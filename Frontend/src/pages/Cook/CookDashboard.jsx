@@ -7,7 +7,10 @@ import CookProfile from "./CookProfile";
 import CookSubscriptions from "./CookSubscriptions";
 import AddMealForm from "./MealForm";
 import CookHome from "./CookHome";
-import { getCookDashboard } from "../../services/cookService";
+import {
+  getCookDashboard,
+  getCookApprovalStatus,
+} from "../../services/cookService";
 import Swal from "sweetalert2";
 import CookComplaints from "./CookComplaints";
 import NotificationBell from "../../components/Notificationbell";
@@ -29,12 +32,17 @@ export default function CookDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState(null);
+  const [approved, setApproved] = useState(false);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const loadDashboard = async () => {
     try {
-      const response = await getCookDashboard();
-      setDashboard(response);
+      const approvalResponse = await getCookApprovalStatus();
+      setApproved(approvalResponse.approved);
+      if (approvalResponse.approved) {
+        const response = await getCookDashboard();
+        setDashboard(response);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -48,6 +56,41 @@ export default function CookDashboard() {
     };
     load();
   }, []);
+  const checkApprovalStatus = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getCookApprovalStatus();
+
+      setApproved(response.approved);
+
+      if (response.approved) {
+        const dashboardResponse = await getCookDashboard();
+        setDashboard(dashboardResponse);
+        setActive("Dashboard");
+      } else {
+        Swal.fire({
+          title: "Still Pending",
+          text: "Your cook registration is still waiting for admin approval.",
+          icon: "info",
+          confirmButtonColor: "#f59e0b",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+
+      Swal.fire({
+        title: "Unable to Check",
+        text:
+          error.response?.data?.message ||
+          "Could not check your approval status. Please try again.",
+        icon: "error",
+        confirmButtonColor: "#f97316",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   const renderPage = () => {
     switch (active) {
       case "Dashboard":
@@ -125,8 +168,47 @@ export default function CookDashboard() {
     return (
       <div className="flex justify-center items-center h-screen">
         <h1 className="text-3xl font-bold text-orange-500">
-          Loading Dashboard...
+          Checking Approval Status...
         </h1>
+      </div>
+    );
+  }
+
+  if (!approved) {
+    return (
+      <div className="min-h-screen bg-amber-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-10 text-center max-w-md w-full">
+          <div className="text-6xl mb-6">⏳</div>
+
+          <h1 className="text-2xl font-bold text-gray-800 mb-3">
+            Awaiting Admin Approval
+          </h1>
+
+          <p className="text-gray-500 text-sm leading-6 mb-6">
+            Your cook registration has been submitted successfully. Please wait
+            while an administrator reviews and approves your account.
+          </p>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <p className="text-sm font-medium text-amber-700">
+              Your cook account is currently pending approval.
+            </p>
+          </div>
+
+          <button
+            onClick={checkApprovalStatus}
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-lg text-sm font-semibold transition"
+          >
+            Check Approval Status
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="mt-3 w-full border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 py-2.5 rounded-lg text-sm font-semibold transition"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     );
   }

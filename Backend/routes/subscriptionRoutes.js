@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require("../middleware/authMiddleware");
 const authorizeRole = require("../middleware/roleMiddleware");
+const verifyCookApproved = require("../middleware/cookApprovalMiddleware");
 const { createSubscription,getMySubscriptions,cancelSubscription,getCookSubscribers,updateSubscription } = require("../controllers/subscriptionController");
 router.post(
 "/",
@@ -28,12 +29,14 @@ router.get(
 "/cook",
 verifyToken,
 authorizeRole("cook"),
+verifyCookApproved,
 getCookSubscribers
 );
 router.put(
     "/:id/status",
     verifyToken,
     authorizeRole("cook"),
+    verifyCookApproved,
     updateSubscription
 );
 
