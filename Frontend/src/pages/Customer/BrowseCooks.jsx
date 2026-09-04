@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
 import { Link } from "react-router-dom";
+import { getImageUrl } from "../../utils/imageUrl";
 function CookCard({ cook }) {
   return (
     <div className="group overflow-hidden rounded-3xl border border-orange-100 bg-white shadow-[0_8px_30px_rgba(251,146,60,0.08)] transition hover:-translate-y-1 hover:shadow-[0_14px_40px_rgba(251,146,60,0.14)]">
       <div className="relative h-56 w-full overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80"
+          src={
+            cook.image_url
+              ? getImageUrl(cook.image_url)
+              : "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80"
+          }
           alt={cook.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
         />
@@ -36,7 +41,10 @@ function CookCard({ cook }) {
           </span>
         </div>
 
-        <Link to={`/cook/${cook.id}`} className="block w-full rounded-2xl bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600">
+        <Link
+          to={`/cook/${cook.id}`}
+          className="block w-full rounded-2xl bg-orange-500 px-4 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
+        >
           View Profile
         </Link>
       </div>
@@ -45,63 +53,52 @@ function CookCard({ cook }) {
 }
 
 export default function BrowseHomeCooksPage() {
-  const [cooks,setCooks] = useState([]);
+  const [cooks, setCooks] = useState([]);
   const [search, setSearch] = useState("");
   const [cuisine, setCuisine] = useState("All Cuisines");
   const [mealType, setMealType] = useState("All");
   const [mealPlan, setMealPlan] = useState("All");
   const [maxPrice, setMaxPrice] = useState("");
-  const [loading,setLoading] = useState(true);
-  const [error,setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   useEffect(() => {
     const timer = setTimeout(async () => {
-        try {
-            const response = await API.get("/search/filter", {
-                params: {
-                    search,
-                    cuisine:
-                        cuisine === "All Cuisines"
-                            ? ""
-                            : cuisine,
-                    mealType:
-                        mealType === "All"
-                            ? ""
-                            : mealType,
-                    mealPlan:
-                        mealPlan === "All"
-                            ? ""
-                            : mealPlan,
-                    maxPrice
-                }
-            });
-            setCooks(response.data);
-        } catch (error) {
-            console.log(error);
-            setError("Unable to load cooks");
-        } finally {
-            setLoading(false);
-        }
+      try {
+        const response = await API.get("/search/filter", {
+          params: {
+            search,
+            cuisine: cuisine === "All Cuisines" ? "" : cuisine,
+            mealType: mealType === "All" ? "" : mealType,
+            mealPlan: mealPlan === "All" ? "" : mealPlan,
+            maxPrice,
+          },
+        });
+        setCooks(response.data);
+      } catch (error) {
+        console.log(error);
+        setError("Unable to load cooks");
+      } finally {
+        setLoading(false);
+      }
     }, 400);
     return () => clearTimeout(timer);
   }, [search, cuisine, mealType, mealPlan, maxPrice]);
   const filteredCooks = cooks;
   if (loading) {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="text-3xl font-bold text-orange-500">
-        Loading Home Cooks...
-      </h1>
-    </div>
-  );
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <h1 className="text-3xl font-bold text-orange-500">
+          Loading Home Cooks...
+        </h1>
+      </div>
+    );
   }
   if (error) {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <h1 className="text-red-500 text-2xl">
-        {error}
-      </h1>
-    </div>
-  );
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <h1 className="text-red-500 text-2xl">{error}</h1>
+      </div>
+    );
   }
   return (
     <div className="min-h-screen bg-linear-to-b from-orange-50 via-white to-white text-slate-900">
@@ -116,7 +113,10 @@ export default function BrowseHomeCooksPage() {
               HomeFeast
             </span>
           </div>
-          <Link to='/customer/dashboard' className="text-sm font-medium text-slate-600 hover:text-orange-500">
+          <Link
+            to="/customer/dashboard"
+            className="text-sm font-medium text-slate-600 hover:text-orange-500"
+          >
             Back to Dashboard
           </Link>
         </nav>
@@ -143,7 +143,7 @@ export default function BrowseHomeCooksPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e)=>{
+                onChange={(e) => {
                   const value = e.target.value;
                   setSearch(value);
                 }}
@@ -155,7 +155,8 @@ export default function BrowseHomeCooksPage() {
             <div>
               <select
                 value={cuisine}
-                onChange={(e) =>{ const value = e.target.value;
+                onChange={(e) => {
+                  const value = e.target.value;
                   setCuisine(value);
                 }}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-900 outline-none transition focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
@@ -169,20 +170,24 @@ export default function BrowseHomeCooksPage() {
               </select>
             </div>
             <div>
-              <label className="block mb-2 font-medium">
-                Meal Type
-              </label>
-              <select value={mealType} onChange={(e)=>setMealType(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <label className="block mb-2 font-medium">Meal Type</label>
+              <select
+                value={mealType}
+                onChange={(e) => setMealType(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4"
+              >
                 <option>All</option>
                 <option>Veg</option>
                 <option>Non-Veg</option>
               </select>
             </div>
             <div>
-              <label className="block mb-2 font-medium">
-                Meal Plan
-              </label>
-              <select value={mealPlan} onChange={(e)=>setMealPlan(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+              <label className="block mb-2 font-medium">Meal Plan</label>
+              <select
+                value={mealPlan}
+                onChange={(e) => setMealPlan(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4"
+              >
                 <option>All</option>
                 <option>Daily</option>
                 <option>Weekly</option>
@@ -190,10 +195,14 @@ export default function BrowseHomeCooksPage() {
               </select>
             </div>
             <div>
-              <label className="block mb-2 font-medium">
-                Maximum Price
-              </label>
-              <input type="number" value={maxPrice} onChange={(e)=>setMaxPrice(e.target.value)} placeholder="Maximum Price" className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4"/>
+              <label className="block mb-2 font-medium">Maximum Price</label>
+              <input
+                type="number"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                placeholder="Maximum Price"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4"
+              />
             </div>
           </div>
         </section>
@@ -206,21 +215,21 @@ export default function BrowseHomeCooksPage() {
             </p>
           </div>
 
-          {
-            filteredCooks.length === 0 ? (
+          {filteredCooks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-            <div className="text-7xl mb-5">🍱</div>
-            <h2 className="text-3xl font-bold text-gray-700">No Home Cooks Found</h2>
-            <p className="text-gray-500 mt-3">Try searching with another keyword.</p>
+              <div className="text-7xl mb-5">🍱</div>
+              <h2 className="text-3xl font-bold text-gray-700">
+                No Home Cooks Found
+              </h2>
+              <p className="text-gray-500 mt-3">
+                Try searching with another keyword.
+              </p>
             </div>
-            ) : (
+          ) : (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
               {filteredCooks.map((cook) => (
-                <CookCard
-                  key={cook.id}
-                  cook={cook}
-                />
-                ))}
+                <CookCard key={cook.id} cook={cook} />
+              ))}
             </div>
           )}
         </section>

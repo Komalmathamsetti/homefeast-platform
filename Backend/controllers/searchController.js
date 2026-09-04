@@ -15,7 +15,7 @@ const getAllCooks = async (req, res) => {
         c.bio,
         c.service_area,
         c.delivery_timings,
-
+        c.image_url,
         MIN(m.price) AS starting_price,
         MIN(m.cuisine) AS cuisine,
 
@@ -53,6 +53,7 @@ const getAllCooks = async (req, res) => {
         c.bio,
         c.service_area,
         c.delivery_timings,
+        c.image_url,
         review_stats.average_rating,
         review_stats.review_count
 
@@ -88,6 +89,7 @@ const getCookDetails = async (req, res) => {
         cooks.bio,
         cooks.service_area,
         cooks.delivery_timings,
+        cooks.image_url,
         cooks.earnings,
         cooks.approved,
 
@@ -172,7 +174,7 @@ const filterCooks = async (req, res) => {
         c.bio,
         c.service_area,
         c.delivery_timings,
-
+        c.image_url,
         MIN(m.price) AS starting_price,
         MIN(m.cuisine) AS cuisine,
 
@@ -244,6 +246,7 @@ const filterCooks = async (req, res) => {
         c.bio,
         c.service_area,
         c.delivery_timings,
+        c.image_url,
         review_stats.average_rating,
         review_stats.review_count
 

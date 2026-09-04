@@ -3,6 +3,7 @@ const createcookProfile = async (req, res) => {
   try {
     const { bio, service_area, delivery_timings } = req.body;
     const userId = req.user.userId;
+    const imageUrl = req.file ? `/uploads/cooks/${req.file.filename}` : null;
     const existingCook = await pool.query(
       "SELECT * FROM cooks WHERE user_id=$1",
       [userId],
@@ -14,10 +15,10 @@ const createcookProfile = async (req, res) => {
     }
     const newCook = await pool.query(
       `INSERT INTO cooks
-      (user_id,bio,service_area,delivery_timings)
-      VALUES($1,$2,$3,$4)
+      (user_id,bio,service_area,delivery_timings,image_url)
+      VALUES($1,$2,$3,$4,$5)
       RETURNING *`,
-      [userId, bio, service_area, delivery_timings],
+      [userId, bio, service_area, delivery_timings, imageUrl],
     );
     res.status(201).json({
       message: "Cook profile created",
@@ -44,7 +45,8 @@ const getCookProfile = async (req, res) => {
                 cooks.delivery_timings,
                 cooks.rating,
                 cooks.approved,
-                cooks.earnings
+                cooks.earnings,
+                cooks.image_url
             FROM cooks
             JOIN users
             ON cooks.user_id = users.id
@@ -69,6 +71,7 @@ const updateCookProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { name, phone, bio, service_area, delivery_timings } = req.body;
+    const imageUrl = req.file ? `/uploads/cooks/${req.file.filename}` : null;
     if (!name || !phone || !bio || !service_area || !delivery_timings) {
       return res.status(400).json({
         message: "All fields are required.",
@@ -83,16 +86,28 @@ const updateCookProfile = async (req, res) => {
             `,
       [name, phone, userId],
     );
-    await pool.query(
-      `UPDATE cooks
-            SET
-              bio = $1,
-              service_area = $2,
-              delivery_timings = $3
-            WHERE user_id = $4
-            `,
-      [bio, service_area, delivery_timings, userId],
-    );
+    if (imageUrl) {
+      await pool.query(
+        `UPDATE cooks
+     SET
+       bio = $1,
+       service_area = $2,
+       delivery_timings = $3,
+       image_url = $4
+     WHERE user_id = $5`,
+        [bio, service_area, delivery_timings, imageUrl, userId],
+      );
+    } else {
+      await pool.query(
+        `UPDATE cooks
+     SET
+       bio = $1,
+       service_area = $2,
+       delivery_timings = $3
+     WHERE user_id = $4`,
+        [bio, service_area, delivery_timings, userId],
+      );
+    }
     const updatedProfile = await pool.query(
       `SELECT
                 users.name,

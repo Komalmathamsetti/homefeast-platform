@@ -1,88 +1,114 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
-import { getCookProfile,updateCookProfile } from "../../services/cookService";
+import { getCookProfile, updateCookProfile } from "../../services/cookService";
+import { getImageUrl } from "../../utils/imageUrl";
 export default function CookProfilePage() {
-  const [profile,setProfile] = useState({
-    name:"",
-    email:"",
-    phone:"",
-    bio:"",
-    service_area:"",
-    delivery_timings:"",
-    rating:0,
-    approved:false
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    bio: "",
+    service_area: "",
+    delivery_timings: "",
+    rating: 0,
+    approved: false,
+    image_url:null
   });
-  const [loading,setLoading] = useState(true);
-  const [saving,setSaving] = useState(false);
-    const fetchProfile = async()=>{
-      try{
-        setLoading(true);
-        const response = await getCookProfile();
-        if(response.data.success){
-          setProfile(response.data.profile);
-        }
-      }catch(error){
-        toast.error(error.response?.data?.message || "Unable to load Profile");
-      }finally{
-        setLoading(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [image, setImage] = useState(null);
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await getCookProfile();
+      if (response.data.success) {
+        setProfile(response.data.profile);
       }
-    };
-    const handleSave = async()=>{
-      if(!profile.name.trim())
-        return toast.error("Name field required");
-      if(!profile.phone.trim())
-        return toast.error("Phone Number required");
-      if(!profile.bio.trim())
-        return toast.error("Bio is required");
-      if (!profile.service_area.trim())
-        return toast.error("Service Area is required");
-      if (!profile.delivery_timings.trim())
-        return toast.error("Delivery Timings are required");
-      try{
-        setSaving(true);
-        const response = await updateCookProfile(profile);
-        if (response.data.success) {
-          Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "Profile Updated Successfully",
-            timer: 1500,
-            showConfirmButton: false,
-          });
-          await fetchProfile();
-        }
-      }catch(error){
-         console.log("Save Error:", error);
-  console.log("Status:", error.response?.status);
-  console.log("Response:", error.response?.data);
-        toast.error(error.response?.data?.message || "Unable to update Profile");
-      }finally{
-        setSaving(false);
-      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load Profile");
+    } finally {
+      setLoading(false);
     }
-  useEffect(() => {
-  const loadProfile = async () => {
-    await fetchProfile();
   };
-  loadProfile();
+  const handleSave = async () => {
+    if (!profile.name.trim()) return toast.error("Name field required");
+
+    if (!profile.phone.trim()) return toast.error("Phone Number required");
+
+    if (!profile.bio.trim()) return toast.error("Bio is required");
+
+    if (!profile.service_area.trim())
+      return toast.error("Service Area is required");
+
+    if (!profile.delivery_timings.trim())
+      return toast.error("Delivery Timings are required");
+
+    try {
+      setSaving(true);
+
+      const data = new FormData();
+
+      data.append("name", profile.name);
+      data.append("phone", profile.phone);
+      data.append("bio", profile.bio);
+      data.append("service_area", profile.service_area);
+      data.append("delivery_timings", profile.delivery_timings);
+
+      if (image) {
+        data.append("image", image);
+      }
+
+      const response = await updateCookProfile(data);
+
+      if (response.data.success) {
+        Swal.fire({
+          icon: "success",
+          title: "Success",
+          text: "Profile Updated Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+        setImage(null);
+        await fetchProfile();
+      }
+    } catch (error) {
+      console.log("Save Error:", error);
+
+      toast.error(error.response?.data?.message || "Unable to update Profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+  useEffect(() => {
+    const loadProfile = async () => {
+      await fetchProfile();
+    };
+    loadProfile();
   }, []);
   if (loading) {
-  return (
-    <div className="min-h-screen flex justify-center items-center">
-      <h1 className="text-3xl font-bold">
-        Loading Profile...
-      </h1>
-    </div>
-  );
+    return (
+      <div className="min-h-screen flex justify-center items-center">
+        <h1 className="text-3xl font-bold">Loading Profile...</h1>
+      </div>
+    );
   }
-return (
+  return (
     <div className="page">
       <div className="container">
         <div className="card">
           <div className="flex items-center gap-5 mb-8">
-            <div className="w-20 h-20 rounded-full bg-linear-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-              {profile.name.charAt(0).toUpperCase()}
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-linear-to-r from-orange-400 to-orange-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+              {profile.image_url ? (
+                <img
+                  src={getImageUrl(profile.image_url)}
+                  alt={profile.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                profile.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div>
               <h1 className="text-3xl font-bold text-orange-600">
@@ -97,12 +123,13 @@ return (
           <div className="formGrid">
             <div className="field">
               <label>Full Name</label>
-              <input type="text" 
-                value={profile.name} 
-                onChange={(e)=>
+              <input
+                type="text"
+                value={profile.name}
+                onChange={(e) =>
                   setProfile({
                     ...profile,
-                    name:e.target.value,
+                    name: e.target.value,
                   })
                 }
               />
@@ -115,14 +142,16 @@ return (
 
             <div className="field">
               <label>Phone Number</label>
-              <input type="tel" 
+              <input
+                type="tel"
                 value={profile?.phone}
-                onChange={(e)=>
+                onChange={(e) =>
                   setProfile({
                     ...profile,
-                    phone:e.target.value
+                    phone: e.target.value,
                   })
-                } />
+                }
+              />
             </div>
 
             <div className="field full">
@@ -130,38 +159,97 @@ return (
               <textarea
                 rows="4"
                 value={profile?.bio}
-                onChange={(e)=>{
+                onChange={(e) => {
                   setProfile({
                     ...profile,
-                    bio:e.target.value
-                  })
+                    bio: e.target.value,
+                  });
                 }}
               />
             </div>
 
             <div className="field">
               <label>Service Area</label>
-              <input type="text" value={profile?.service_area}
-              onChange={(e)=>{
-                setProfile({
-                  ...profile,
-                  service_area:e.target.value
-                })
-              }} />
+              <input
+                type="text"
+                value={profile?.service_area}
+                onChange={(e) => {
+                  setProfile({
+                    ...profile,
+                    service_area: e.target.value,
+                  });
+                }}
+              />
             </div>
 
             <div className="field">
               <label>Delivery Timings</label>
-              <input type="text" value={profile?.delivery_timings}
-              onChange={(e)=>{
-                setProfile({
-                  ...profile,
-                  delivery_timings:e.target.value
-                })
-              }} />
+              <input
+                type="text"
+                value={profile?.delivery_timings}
+                onChange={(e) => {
+                  setProfile({
+                    ...profile,
+                    delivery_timings: e.target.value,
+                  });
+                }}
+              />
             </div>
           </div>
+          <div className="mt-6">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
+              Profile Image
+            </label>
 
+            {profile.image_url && !image && (
+              <div className="mb-4">
+                <p className="mb-2 text-xs text-gray-500">Current Image</p>
+
+                <img
+                  src={getImageUrl(profile.image_url)}
+                  alt={profile.name}
+                  className="h-40 w-40 rounded-2xl object-cover border border-orange-200"
+                />
+              </div>
+            )}
+
+            <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed border-orange-200 bg-orange-50 px-6 py-8 text-center transition hover:border-orange-400 hover:bg-orange-100/50">
+              <div className="text-4xl">📷</div>
+
+              <p className="mt-2 text-sm font-medium text-gray-700">
+                {image ? image.name : "Upload profile image"}
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                PNG, JPG or WEBP • Maximum 5MB
+              </p>
+
+              <input
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const selectedImage = e.target.files[0];
+
+                  if (selectedImage) {
+                    setImage(selectedImage);
+                  }
+                }}
+              />
+            </label>
+
+            {image && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs text-gray-500">New Image Preview</p>
+
+                <img
+                  src={URL.createObjectURL(image)}
+                  alt="Profile Preview"
+                  className="h-40 w-40 rounded-2xl object-cover border border-orange-200"
+                />
+              </div>
+            )}
+          </div>
           <div className="statsGrid">
             <div className="statCard">
               <span>Average Rating</span>
@@ -170,7 +258,7 @@ return (
           </div>
 
           <button className="saveBtn" onClick={handleSave} disabled={saving}>
-            {saving?"Saving...":"Save Changes"}
+            {saving ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </div>
